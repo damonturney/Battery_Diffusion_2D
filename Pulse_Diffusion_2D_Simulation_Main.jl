@@ -25,7 +25,7 @@ module Diffusion_2D
     #       global scope of the modules. They said I should define all variables in
     #       the functions. Something about mutable global state being evil.
 
-    #include("Battery_Simulation_1D_generally_useful_functions.jl")
+    #include("Battery_Simulation_1D_generally_useful_functions.jl") 
 
     ############################################################
     #### Functions to create the initial system state and functions for V_anode and V_cathode
@@ -54,8 +54,8 @@ end
 
 # Work Flow
 ss = Diffusion_2D.create_system_state();
-ss,sim_data = Diffusion_2D.run_simulation(ss , 0:Int64(1E7), 2E4, -0.01, 5E-7); # args: system_state, iterations, saved_iteration_spacing,  voltage_timeseries ,  dt 
-plot_results_time_slice(ss,sim_data,104)
+ss,sim_data = Diffusion_2D.run_simulation(ss , 0:Int64(1E7), 1E5, -0.01, 1E-6); # args: system_state, iterations, saved_iteration_spacing,  voltage_timeseries ,  dt 
+#plot_results_time_slice(ss,sim_data,104)
 #using FileIO
 #cv_data = get(load("produced_data/20200803102000/20200803102016_dictionary_results.jld2"), "cyclicV_data",0);
 #ss =      get(load("produced_data/20200803102000/20200803102016_dictionary_results.jld2"), "system_state"          ,0);
