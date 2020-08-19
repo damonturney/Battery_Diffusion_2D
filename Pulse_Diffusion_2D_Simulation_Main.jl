@@ -54,7 +54,7 @@ end
 
 # Work Flow
 ss = Diffusion_2D.create_system_state();
-ss,sim_data = Diffusion_2D.run_simulation(ss , 0:Int64(2E5), 1E3, -0.01, 2E-7); # args: system_state, iterations, saved_iteration_spacing,  voltage_timeseries ,  dt 
+ss,sim_data = Diffusion_2D.run_simulation(ss , 0:Int64(1E7), 2E4, -0.01, 5E-7); # args: system_state, iterations, saved_iteration_spacing,  voltage_timeseries ,  dt 
 plot_results_time_slice(ss,sim_data,104)
 #using FileIO
 #cv_data = get(load("produced_data/20200803102000/20200803102016_dictionary_results.jld2"), "cyclicV_data",0);
