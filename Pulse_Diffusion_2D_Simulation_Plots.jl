@@ -64,34 +64,7 @@ end
 
 
 function plot_results_time_series(ss,sim_data)
-   plot_folder = ss.system_state_folder_name*"/CV_time_series_"
-   num_digits_cell_voltage_plot =  round(Int64,-log10((maximum(sim_data.cell_voltage_saved) - minimum(sim_data.cell_voltage_saved))/10 )) + 2 # The +2 is for the "1." characters in front of everything
-   xformatter_cell_voltage=x->if typeof(x)==Float64 @sprintf("%0.10e",x)[[1:num_digits_cell_voltage_plot;]] end
-   yformatter=y->if typeof(y)==Float64 @sprintf("%0.10e",y)[[1:4; end-3:end]] end
-            plot( sim_data.cell_voltage_saved,sim_data.eta_cathode_saved[:,20],                        markershape=:circle, linealpha=0.0,markersize=5,legend=:topleft,label="eta_cathode")
-            plot!(sim_data.cell_voltage_saved,sim_data.V_elctrlt_saved[:,20],                          markershape=:circle, linealpha=0.0,markersize=5,legend=:topleft,label="Voltage elctrlt")
-   savefig(plot!(sim_data.cell_voltage_saved,sim_data.eta_anode_saved[:,20],                          markershape=:circle, linealpha=0.0,markersize=5,legend=:topleft,label="eta_Al",   xticks=range(minimum(sim_data.cell_voltage_saved), length=10, stop=maximum(sim_data.cell_voltage_saved)),xrotation=45,xformatter=xformatter_cell_voltage ), plot_folder*"overvoltages.png");
-   savefig(plot( sim_data.cell_voltage_saved, sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10], markershape=:circle, linealpha=0.0,markersize=5,legend=:none,title="I vs cell V", xticks=range(minimum(sim_data.cell_voltage_saved), length=10, stop=maximum(sim_data.cell_voltage_saved)),xrotation=45,xformatter=xformatter_cell_voltage ), plot_folder*"cell_voltage.png");
+   a=1
 end
 
-function plot_results_image(ss,sim_data,k)
-end
-
-
-###########To make movies
-#theta_animation(1,length(sim_data.cell_voltage_saved),0.0,1.0)
-function theta_vs_cv_animation(ss,sim_data,first_time,last_time,thetamin,thetamax)
-        anim = @animate for k=first_time:last_time
-                layout1 = grid(2,1,heights=[0.7,0.3])
-                # plot(  ss.pcl_x_nodes_fine*ss.radius_cathode_pcl*1e6,sim_data.theta_fine_saved[k,:,1],size=(600,400),line=(2,:blue),markeralpha=0,legend=:none,ylims=(thetamin,thetamax),layout=layout1,subplot=1,xaxis = ("Location in Graphite Particle (um)", font(8)),yaxis = ("\\theta (n.d.)", (0,1), font(8)),bottom_margin=0mm,left_margin=-2.5mm)
-                # plot!(-ss.pcl_x_nodes_fine*ss.radius_cathode_pcl*1e6,sim_data.theta_fine_saved[k,:,1],size=(600,400),line=(2,:blue),markeralpha=0,legend=:none,ylims=(thetamin,thetamax),layout=layout1,subplot=1,xaxis = ("Location in Graphite Particle (um)", font(8)),yaxis = ("\\theta (n.d.)", (0,1), font(8)),bottom_margin=0mm,left_margin=-2.5mm)
-                plot(    ss.pcl_x_nodes[:]  *ss.radius_cathode_pcl*1e6,  sim_data.theta_saved[k,:,10], linealpha=0.0, marker=(:circle,5,:blue, stroke(0)),legend=:none,ylims=(thetamin,thetamax),xaxis = ("Location in Graphite Particle (um)", font(20)),yaxis = ("\\theta (n.d.)", (0,1), font(20)),bottom_margin=0mm,left_margin=2mm,layout=layout1,subplot=1,size=(840,1000))
-                plot!(  -ss.pcl_x_nodes[:]  *ss.radius_cathode_pcl*1e6,  sim_data.theta_saved[k,:,10], linealpha=0.0, marker=(:circle,5,:blue, stroke(0)),legend=:none,ylims=(thetamin,thetamax),layout=layout1,subplot=1)
-                plot!( [ ss.pcl_x_nodes[end]*ss.radius_cathode_pcl*1e6],[sim_data.theta_eq_intfc_saved[k,10]],        linealpha=0.0, marker=(:circle,6,:green,stroke(0)),legend=:none,ylims=(thetamin,thetamax),layout=layout1,subplot=1)
-                plot!( [-ss.pcl_x_nodes[end]*ss.radius_cathode_pcl*1e6],[sim_data.theta_eq_intfc_saved[k,10]],        linealpha=0.0, marker=(:circle,6,:green,stroke(0)),legend=:none,ylims=(thetamin,thetamax),layout=layout1,subplot=1)
-                plot!(sim_data.cell_voltage_saved,sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10],linealpha=0.0,marker=(:circle, 6, stroke(0),:blue),legend=:none,ylims=(minimum(sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10])*1.1,maximum(sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10])*1.1),layout=layout1,subplot=2,xaxis = ("Cell Voltage  (V)", font(20)),yaxis = (L"\mathrm{Current \,\,\, (A \,m^{-2})}", font(20)),bottom_margin=0mm,left_margin=0mm)
-                plot!([sim_data.cell_voltage_saved[k],sim_data.cell_voltage_saved[k]],[minimum(sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10])*1.1,maximum(sim_data.i_sol_sup_stagrd_saved[:,ss.num_cathode_nodes+10])*1.1],line=(1,:red),linecolor=:red,layout=layout1,subplot=2)
-        end
-        gif(anim, "produced_data/" *sim_data.data_dictionary_name[1:14] * "_theta_animation" * ".gif", fps = 15)
-end
 
