@@ -46,7 +46,7 @@ function create_system_state()
 
    ## Describing the spike 
    spike_num_x_mps = 30
-   spike_num_y_mps = 150
+   spike_num_y_mps = 2
 
    ############## Define system arrays that WILL mutate during calculations but won't change in size and don't  ##############
    ############## have a dimension size that is dependent on the simulation duration or cycling procedure !     ##############
