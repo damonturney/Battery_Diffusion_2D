@@ -1,10 +1,8 @@
 ############# Functions to plot results from   ###################################################
 ############# Al:AlCl3:EMImCl:graphite battery ###################################################
-using Plots, LaTeXStrings, Plots.PlotMeasures, Dates, Printf
+using LaTeXStrings, Dates, Printf
 import Statistics.mean
 import PyPlot
-import Printf
-using LaTeXStrings
 
  
 function plot_results_time_slice(ss,sim_data,k)
