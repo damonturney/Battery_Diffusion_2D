@@ -15,8 +15,8 @@ function plot_results_time_slice(ss,sim_data,k)
    contour_cb_axes_han = plot_figure_han.add_axes([0.05,0.18,0.9,0.03])
    scatt_cb_axes_han   = plot_figure_han.add_axes([0.05,0.07,0.9,0.03])
    plot_axis_han.set_facecolor((0.5, 0.5, 0.5))
-   fig_x, fig_y, fig_dx, fig_dy = PyPlot.get_current_fig_manager().window.geometry().getRect()  #left border location , top border location, width, height     
-   PyPlot.get_current_fig_manager().window.setGeometry(0,fig_y,fig_dx,fig_dy) 
+   #fig_x, fig_y, fig_dx, fig_dy = PyPlot.get_current_fig_manager().window.geometry().getRect()  #left border location , top border location, width, height     
+   #PyPlot.get_current_fig_manager().window.setGeometry(0,fig_y,fig_dx,fig_dy) 
    levels = collect(range(0.6,stop=1,length=50))
    contourf_han = plot_axis_han.contourf(xs,ys,conc_data_cat,levels,cmap="plasma", vmin=0.6, vmax=1, zorder=1)
    contour_han = plot_axis_han.contour(xs,ys,conc_data_cat,levels,linewidths=0.5, colors="k", vmin=0.6, vmax=1, alpha=0.25, zorder=2)
@@ -48,12 +48,13 @@ end
 
 
 
-function make_movie(ss,sim_data)
+function make_movie(ss,sim_data,end_frame_num)
    rm("produced_data/video_images/",recursive=true,force=true)
-   rm("produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4")
+   rm("produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4",force=true)
    mkdir("produced_data/video_images/")
    PyPlot.close("all")
-   for frame_num in 1:30
+   for frame_num in 1:end_frame_num
+      println("frame num: "*string(frame_num))
       plot_results_time_slice(ss,sim_data,frame_num)
       PyPlot.savefig("produced_data/video_images/"*Printf.@sprintf("%04d", frame_num)*".png", dpi=300)
       PyPlot.close("all") 
