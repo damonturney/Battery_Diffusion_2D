@@ -33,8 +33,8 @@ function create_system_state()
    ############## calculations                                                          ############################
    println("Creating fresh system state.")
 
-   dx = 50E-9
-   dy = 50E-9
+   dx = 200E-9
+   dy = 200E-9
    num_x_mps= 64  #number of meshpoints
    num_y_mps= 500  #number of meshpoints
 
@@ -42,7 +42,7 @@ function create_system_state()
    locations_y = reverse(collect(range(0.0, num_y_mps*dy, length=num_y_mps))*transpose(ones(num_x_mps)),dims=1)
 
    ## Describing the electrolyte domain
-   Diffusivity=1.E-10 #in units of m^2/s
+   Diffusivity=1.E-11 #in units of m^2/s
 
    ## Describing the spike 
    spike_num_x_mps = 30
