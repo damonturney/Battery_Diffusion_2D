@@ -62,20 +62,21 @@ end
 
 
 function make_movie(ss,sim_data,start_frame_num,end_frame_num,color_map_minimum)
-   rm("produced_data/video_images/",recursive=true,force=true)
+   rm("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/",recursive=true,force=true)
    rm("produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4",force=true)
-   mkdir("produced_data/video_images/")
+   mkdir("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/")
    PyPlot.close("all")
    image_num=0
    for frame_num in start_frame_num:end_frame_num
       image_num=image_num+1
       println("frame num: "*string(frame_num))
       plot_results_time_slice(ss,sim_data,frame_num,color_map_minimum)
-      PyPlot.savefig("produced_data/video_images/"*Printf.@sprintf("%04d", image_num)*".png", dpi=300)
+      PyPlot.savefig("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/"*Printf.@sprintf("%04d", image_num)*".png", dpi=300)
       PyPlot.close("all") 
    end
-   bash_command ="ffmpeg -start_number 4 -i produced_data/video_images/%04d.png -vcodec libx265 -x265-params \"lossless=1\" -preset slow -vf format=yuv420p produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4"
+   bash_command ="ffmpeg -start_number 4 -i produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/%04d.png -vcodec libx265 -x265-params \"lossless=1\" -preset slow -vf format=yuv420p produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4"
    run(`bash -c $bash_command`)
+   ("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/")
 end
 
 
