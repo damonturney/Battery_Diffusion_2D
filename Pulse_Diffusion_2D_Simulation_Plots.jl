@@ -5,7 +5,7 @@ import Statistics.mean
 import PyPlot
 
  
-function plot_results_time_slice(ss,sim_data,k,color_map_minimum)
+function plot_results_time_slice(ss,sim_data,k,concentration_color_map_minimum,current_density_colormap_range)
    xs = collect(range(0.0, 4*ss.num_x_mps*ss.dx, length=4*ss.num_x_mps))*1E6
    ys = reverse(ss.locations_y[:,1])*1E6
    conc_data_cat = cat(sim_data.conc_saved[k,:,:],reverse(sim_data.conc_saved[k,:,:],dims=2),sim_data.conc_saved[k,:,:],reverse(sim_data.conc_saved[k,:,:],dims=2);dims=2)/1000 #to convert from moles/m3 to moles/L
@@ -18,12 +18,12 @@ function plot_results_time_slice(ss,sim_data,k,color_map_minimum)
    plot_axis_han.set_facecolor((0.5, 0.5, 0.5))
    #fig_x, fig_y, fig_dx, fig_dy = PyPlot.get_current_fig_manager().window.geometry().getRect()  #left border location , top border location, width, height     
    #PyPlot.get_current_fig_manager().window.setGeometry(0,fig_y,fig_dx,fig_dy) 
-   levels = collect(range(color_map_minimum,stop=1,length=50))
-   contourf_han = plot_axis_han.contourf(xs,ys,conc_data_cat,levels,cmap="plasma", vmin=color_map_minimum, vmax=1.0, zorder=1)
-   contour_han = plot_axis_han.contour(xs,ys,conc_data_cat,levels,linewidths=0.5, colors="k", vmin=color_map_minimum, vmax=1, alpha=0.25, zorder=2)
+   levels = collect(range(concentration_color_map_minimum,stop=1,length=50))
+   contourf_han = plot_axis_han.contourf(xs,ys,conc_data_cat,levels,cmap="plasma", vmin=concentration_color_map_minimum, vmax=1.0, zorder=1)
+   contour_han = plot_axis_han.contour(xs,ys,conc_data_cat,levels,linewidths=0.5, colors="k", vmin=concentration_color_map_minimum, vmax=1, alpha=0.25, zorder=2)
    ylim=plot_axis_han.get_ylim()
    xlim=plot_axis_han.get_xlim()
-   contour_cb_han = PyPlot.colorbar(contourf_han, cax=contour_cb_axes_han, orientation="horizontal", ticks=collect(range(color_map_minimum,step=0.1,stop=1.0)))
+   contour_cb_han = PyPlot.colorbar(contourf_han, cax=contour_cb_axes_han, orientation="horizontal", ticks=collect(range(concentration_color_map_minimum,step=0.1,stop=1.0)))
    contour_cb_han.set_label("concentration (moles/L)", labelpad=1)
    plot_axis_han.set_xlabel("microns", labelpad=1)
    plot_axis_han.set_ylabel("microns", labelpad=0.6)
@@ -52,17 +52,17 @@ function plot_results_time_slice(ss,sim_data,k,color_map_minimum)
    newcmp = PyPlot.ColorMap("gwr",newcolors);
 
    #Scatter the current density onto the surface as color circles
-   scatt_han = plot_axis_han.scatter(surface_xs4, surface_ys4, c=current_density4, s=7,  edgecolors="none", cmap=newcmp, vmin=-50, vmax=50, zorder=3) 
+   scatt_han = plot_axis_han.scatter(surface_xs4, surface_ys4, c=current_density4, s=7,  edgecolors="none", cmap=newcmp, vmin=-current_density_colormap_range, vmax=current_density_colormap_range, zorder=3) 
    plot_axis_han.set_xlim(xlim)
    plot_axis_han.set_ylim([0,ys[end,1]*1.1])
-   scatter_cb_han = PyPlot.colorbar(scatt_han, cax=scatt_cb_axes_han, orientation="horizontal", alpha=0.5, ticks=[-50,-40,-30,-20,-10,0,10,20,30,40,50])
+   scatter_cb_han = PyPlot.colorbar(scatt_han, cax=scatt_cb_axes_han, orientation="horizontal", alpha=0.5, ticks=collect(range(-current_density_colormap_range,step=2,stop=current_density_colormap_range)))
    scatter_cb_han.set_label("current density "*L"(mA/cm^2)", labelpad=1)
 end
 
 
 
 
-function make_movie(ss,sim_data,start_frame_num,end_frame_num,color_map_minimum)
+function make_movie(ss,sim_data,start_frame_num,end_frame_num,concentration_color_map_minimum,)
    rm("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/",recursive=true,force=true)
    rm("produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4",force=true)
    mkdir("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/")
@@ -71,7 +71,7 @@ function make_movie(ss,sim_data,start_frame_num,end_frame_num,color_map_minimum)
    for frame_num in start_frame_num:end_frame_num
       image_num=image_num+1
       println("frame num: "*string(frame_num))
-      plot_results_time_slice(ss,sim_data,frame_num,color_map_minimum)
+      plot_results_time_slice(ss,sim_data,frame_num,concentration_color_map_minimum,)
       PyPlot.savefig("produced_data/video_images_"*sim_data.data_dictionary_name[1:14]*"/"*Printf.@sprintf("%04d", image_num)*".png", dpi=300)
       PyPlot.close("all") 
    end
