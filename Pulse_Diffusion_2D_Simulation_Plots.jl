@@ -45,9 +45,10 @@ function plot_results_time_slice(ss,sim_data,k,color_map_minimum)
    
    # Make a user-defined colormap.   see https://matplotlib.org/3.1.0/tutorials/colors/colormap-manipulation.html and https://github.com/JuliaPy/PyPlot.jl
    bwr_cmap = PyPlot.cm.get_cmap("bwr", 256)
-   newcolors = bwr_cmap(collect(range(0, step=1, stop=255)));
-   newcolors2[:,3]=newcolors[:,2]; newcolors2[:,2]=newcolors[:,3];
-   newcmp = PyPlot.ColorMap("gwr",newcolors2);
+   colors = bwr_cmap(collect(range(0, step=1, stop=255)));
+   newcolors = 1.0*colors
+   newcolors[:,3]=colors[:,2]; newcolors[:,2]=colors[:,3];
+   newcmp = PyPlot.ColorMap("gwr",newcolors);
 
    #Scatter the current density onto the surface as color circles
    scatt_han = plot_axis_han.scatter(surface_xs4, surface_ys4, c=current_density4, s=7,  edgecolors="none", cmap=newcmp, vmin=-50, vmax=50, zorder=3) 
