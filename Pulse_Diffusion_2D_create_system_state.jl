@@ -75,3 +75,9 @@ function create_system_state()
 
    return(system_state)
 end
+
+function load_previous_state(filename)
+   ss       = get(FileIO.load("produced_data/"*filename), "system_state",0);
+   sim_data = get(FileIO.load("produced_data/"*filename), "sim_data",0);
+   return(ss,sim_data)
+end

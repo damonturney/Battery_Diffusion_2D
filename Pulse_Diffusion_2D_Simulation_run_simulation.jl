@@ -155,6 +155,7 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
    println("using FileIO")
    println("sim_data = get(load(\"produced_data/"*sim_data.data_dictionary_name*"\"), \"sim_data\",0);")
    println("ss =       get(load(\"produced_data/"*sim_data.data_dictionary_name*"\"), \"system_state\",0);")
+   println("Number of saved timesteps: "*string(length(sim_data.iterations_saved)))
 
    return(ss,sim_data)
 
