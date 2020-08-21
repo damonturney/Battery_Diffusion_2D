@@ -60,7 +60,7 @@ end
 
 
 
-function make_movie(ss,sim_data,start_frame_num,end_frame_num)
+function make_movie(ss,sim_data,start_frame_num,end_frame_num,color_map_minimum)
    rm("produced_data/video_images/",recursive=true,force=true)
    rm("produced_data/"*sim_data.data_dictionary_name[1:14]*"_movie.mp4",force=true)
    mkdir("produced_data/video_images/")
@@ -69,7 +69,7 @@ function make_movie(ss,sim_data,start_frame_num,end_frame_num)
    for frame_num in start_frame_num:end_frame_num
       image_num=image_num+1
       println("frame num: "*string(frame_num))
-      plot_results_time_slice(ss,sim_data,frame_num)
+      plot_results_time_slice(ss,sim_data,frame_num,color_map_minimum)
       PyPlot.savefig("produced_data/video_images/"*Printf.@sprintf("%04d", image_num)*".png", dpi=300)
       PyPlot.close("all") 
    end
