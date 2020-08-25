@@ -38,11 +38,11 @@ function plot_results_time_slice(ss,sim_data,k,concentration_color_map_minimum,c
    ref_electrode_axis_han.set_facecolor((0.5, 0.5, 0.5))
    ref_electrode_axis_han.get_yaxis().set_visible(false); ref_electrode_axis_han.get_xaxis().set_visible(false); ref_electrode_axis_han.spines["left"].set_visible(false); ref_electrode_axis_han.spines["right"].set_visible(false); ref_electrode_axis_han.spines["top"].set_visible(false); ref_electrode_axis_han.spines["bottom"].set_visible(false);
    ref_electrode_axis_han.annotate("ref electrode", (0.01, 0.2), xycoords="axes fraction")
-   surface_xs1 = [collect(1:ss.spike_num_x_mps)*ss.dx; repeat([ss.spike_num_x_mps*ss.dx],inner=ss.spike_num_y_mps) ; collect(ss.spike_num_x_mps:ss.num_x_mps)*ss.dx ; ]*1E6
-   surface_ys1 = ys[[repeat([ss.num_y_mps - ss.spike_num_y_mps],inner=ss.spike_num_x_mps) ; collect(ss.num_y_mps - ss.spike_num_y_mps:ss.num_y_mps) ; repeat([ss.num_y_mps],inner=ss.num_x_mps-ss.spike_num_x_mps)]]
-   surface_xs4 = [surface_xs1 ; -reverse(surface_xs1) .+ 2*surface_xs1[end] ; surface_xs1 .+ 2*surface_xs1[end] ; -reverse(surface_xs1) .+ 4*surface_xs1[end] ]
-   surface_ys4 = [surface_ys1 ; reverse(surface_ys1) ; surface_ys1 ; reverse(surface_ys1)]
-   current_density4 = [sim_data.current_density_saved[k,:] ; reverse(sim_data.current_density_saved[k,:]) ; sim_data.current_density_saved[k,:] ; reverse(sim_data.current_density_saved[k,:])]/10 #divide by 10 to convert to mA/cm2
+   surface_xs = [collect(1:ss.spike_num_x_mps)*ss.dx; repeat([ss.spike_num_x_mps*ss.dx],inner=ss.spike_num_y_mps) ; collect(ss.spike_num_x_mps:ss.num_x_mps)*ss.dx ; ]*1E6
+   surface_ys = ys[[repeat([ss.num_y_mps - ss.spike_num_y_mps],inner=ss.spike_num_x_mps) ; collect(ss.num_y_mps - ss.spike_num_y_mps:ss.num_y_mps) ; repeat([ss.num_y_mps],inner=ss.num_x_mps-ss.spike_num_x_mps)]]
+   surface_xs4 = [surface_xs ; -reverse(surface_xs) .+ 2*surface_xs[end] ; surface_xs .+ 2*surface_xs[end] ; -reverse(surface_xs) .+ 4*surface_xs[end] ] #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side
+   surface_ys4 = [surface_ys ; reverse(surface_ys) ; surface_ys ; reverse(surface_ys)]                                                                   #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side
+   current_density4 = [sim_data.current_density_saved[k,:] ; reverse(sim_data.current_density_saved[k,:]) ; sim_data.current_density_saved[k,:] ; reverse(sim_data.current_density_saved[k,:])]/10 #divide by 10 to convert to mA/cm2     #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side
    
    # Make a user-defined colormap.   see https://matplotlib.org/3.1.0/tutorials/colors/colormap-manipulation.html and https://github.com/JuliaPy/PyPlot.jl
    bwr_cmap = PyPlot.cm.get_cmap("bwr", 256)

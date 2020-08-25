@@ -1,10 +1,10 @@
 ####################################################################################################
-###### Cyclic Voltametry Operator
+###### Pulse Current Operator
 ####################################################################################################
 
 
-###### Create the data type that will hold all information for the CV operator (including time series)
-struct simulation_results_struct
+###### Create the data type that will hold all information for the pulse current operator (including time series)
+struct pulse_current_simulation_data_structure
    start_time                      ::Array{String,1}
    stop_time                       ::Array{String,1}
    data_dictionary_name            ::String
@@ -23,8 +23,10 @@ struct simulation_results_struct
 end
 
 
+
+
 ######## A function to create and initialize a single instance of the data structure 
-function run_simulation(ss, iterations, saved_iteration_spacing, electrode_voltage1, electrode_voltage1_ontime, electrode_voltage2, electrode_voltage2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
+function pulse_current(ss, iterations, saved_iteration_spacing, current_density_target1, current_density1_ontime, current_density_target2, current_density2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
    println(" ");println(" ");println(" ");println(" ")
    println("Creating CyclicV_operator.")
 
@@ -37,7 +39,7 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
    if any(iterations_saved.==1)==false;  iterations_saved=cat(1,iterations_saved,dims=1);  end;
    if length(iterations) != iterations_saved[end]; iterations_saved=cat(iterations_saved,length(iterations),dims=1);  end;
 
-   sim_data=simulation_results_struct(
+   sim_data=pulse_current_simulation_data_structure(
       [start_time]                                                                #start_time
       ,["running"]                                                                #stop_time
       ,start_time * "_dictionary_results.jld2"                                    #data_dictionary_name
@@ -64,13 +66,22 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
    conc_B_along_surface = ss.total_conc .- conc_A_along_surface
    voltage_eq_along_surface = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
-   electrode_voltage = electrode_voltage1
-   overvoltage = electrode_voltage .- voltage_eq_along_surface
+   current_density_target =current_density_target1
+   overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
    current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+   current_density_error = mean(current_density) - current_density_target
+   while abs(current_density_error) > 0.1
+      overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
+      current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+      current_density_error = mean(current_density) - current_density_target
+      ss.electrode_voltage[1] = ss.electrode_voltage[1] - mean(current_density_error)*1E-7
+      #@printf("mean_current_density:%+0.7e   electrode_voltage:%+0.7e     cd_error:%0.7e \n", mean(current_density) , ss.electrode_voltage[1],  current_density_error)
+      #sleep(0.5)
+   end
    Charge_Passed = 0.0*current_density
    molar_flux = current_density/96500.0
 
-   record_to_output_arrays(ss, sim_data, 1, 1, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
+   record_pulse_current_output(ss, sim_data, 1, 1, current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
 
    print("simulated duration is ",sim_data.dt[1]*sim_data.iterations[end], " seconds\n") 
    println("data saved to produced_data/"*sim_data.data_dictionary_name) 
@@ -93,13 +104,22 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
       #println(conc_A_along_surface/ss.conc_A[1,50])
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
       electrode_voltage1, electrode_voltage1_ontime, electrode_voltage2, electrode_voltage2_ontime
-      if mod(main_loop_iteration*sim_data.dt, electrode_voltage1_ontime+electrode_voltage2_ontime) <= electrode_voltage1_ontime
-         electrode_voltage = electrode_voltage1
+      if mod(main_loop_iteration*sim_data.dt, current_density1_ontime + current_density2_ontime) <= current_density1_ontime
+         current_density_target = current_density_target1
       else
-         electrode_voltage = electrode_voltage2
+         current_density_target = current_density_target2
       end
-      overvoltage[:] = electrode_voltage .- voltage_eq_along_surface
-      current_density[:] = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]) .* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )   #(A/m2)
+      overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
+      current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+      current_density_error = mean(current_density) - current_density_target
+      while abs(current_density_error) > 0.1
+         overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
+         current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+         current_density_error = mean(current_density) - current_density_target
+         ss.electrode_voltage[1] = ss.electrode_voltage[1] - current_density_error*1E-7
+         #@printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e \n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] )
+         #sleep(0.5)
+      end
       #println(current_density)
       molar_flux[:] = current_density/96500.0   
       
@@ -140,7 +160,7 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
       ##### Save data for post-analysis
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
          @printf(":%-4i   real_time:%+0.7e \n", main_loop_iteration , main_loop_iteration*sim_data.dt[1] )
-         record_to_output_arrays(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
+         record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
       end
 
    end ## this is the end of the for loop of time steps
@@ -162,8 +182,10 @@ function run_simulation(ss, iterations, saved_iteration_spacing, electrode_volta
 end  ## end of function run_simulation
 
 
+
+
 ####### A function to record a time series of the battery state during the CV operation
-function record_to_output_arrays(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
+function record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
       sim_data.time_real_saved[k]          = sim_data.iterations[main_loop_iteration]*sim_data.dt[1]
       sim_data.current_density_saved[k,:]  = current_density[:]
       sim_data.Charge_Passed_saved[k,:]    = Charge_Passed[:]   # coulombs per m3

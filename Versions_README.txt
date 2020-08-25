@@ -11,6 +11,7 @@ v1.4
 
 
 
+######### ALPHABETICAL LIST OF VIM COMMANDS
 
 
 
@@ -19,7 +20,10 @@ v1.4
 
 
 
-ALPHABETICAL GIT COMMANDS (MASTER LIST IS IN BACKEDUP/Software/DamonWrittenSoftware/)
+
+
+
+########## ALPHABETICAL GIT COMMANDS (MASTER LIST IS IN BACKEDUP/Software/DamonWrittenSoftware/)
 cat .git/HEAD                        see what the HEAD is current pointing to
 git add .                            add all changed files to the staging area
 git branch                           shows the names of all local branches
