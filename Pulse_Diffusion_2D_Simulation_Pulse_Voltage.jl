@@ -114,7 +114,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
          conc_next_timestep[2:ss.num_y_mps - 1, i_x]                   =  r_y*ss.conc_A[1:ss.num_y_mps - 2, i_x]                     + (1 - 2*r_y)*ss.conc_A[2:ss.num_y_mps - 1, i_x]                     +   r_y*ss.conc_A[3:ss.num_y_mps , i_x]
          conc_next_timestep[ss.num_y_mps      , i_x]                   =2*r_y*ss.conc_A[ss.num_y_mps - 1  , i_x]                     + (1 - 2*r_y)*ss.conc_A[ss.num_y_mps      , i_x]                     + 2*r_y*ss.dy*molar_flux[i_x+ss.spike_num_y_mps+1]/ss.Diffusivity
       end
-
+      #Calculate how much the concentration increases due to y-direction gradients
       conc_increment_dy = conc_next_timestep[:,:] - ss.conc_A[:,:]
       conc_increment_dy[short_y_num+1,ss.spike_num_x_mps] = conc_increment_dy[short_y_num+1,ss.spike_num_x_mps] + 2*r_y*ss.dy*molar_flux[ss.spike_num_x_mps]/ss.Diffusivity
 
@@ -129,12 +129,19 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
          conc_next_timestep[i_y , ss.spike_num_x_mps+1:ss.num_x_mps-1] =  r_x*ss.conc_A[i_y , ss.spike_num_x_mps:ss.num_x_mps - 2]   + (1 - 2*r_x)*ss.conc_A[i_y , ss.spike_num_x_mps+1:ss.num_x_mps-1]   +   r_x*ss.conc_A[i_y , ss.spike_num_x_mps+2:ss.num_x_mps] #this last term is due to the "periodic" boundary condition
          conc_next_timestep[i_y , ss.num_x_mps]                        =  r_x*ss.conc_A[i_y , ss.num_x_mps - 1]                      + (1 - 2*r_x)*ss.conc_A[i_y , ss.num_x_mps-1]                        +   r_x*ss.conc_A[i_y , ss.num_x_mps - 1]
       end
-
-      # Finally, I add the increase in concentration due to x-direction and y-direction gradients together!
+      #Calculate how much the concentration increases due to y-direction gradients
       conc_increment_dx = conc_next_timestep[:,:] - ss.conc_A[:,:]
       conc_increment_dx[short_y_num+1,ss.spike_num_x_mps] = conc_increment_dx[short_y_num+1,ss.spike_num_x_mps] + 2*r_y*ss.dy*molar_flux[ss.spike_num_x_mps+1]/ss.Diffusivity
 
+      # Finally, I add the increase in concentration due to x-direction and y-direction gradients together!
       ss.conc_A[:,:] = ss.conc_A[:,:] + conc_increment_dy[:,:] + conc_increment_dx[:,:]
+
+      #Now I check if concentrations dropped below zero and then calculate the real current density  (the real current density on the corner of the spike will be ~2x higher than the Butler-Volmer boundary condition, which was calculated 40 lines above, because the concentration of the corner meshpoint gets reduced by the x and y direction boundary conditions simultaneously)
+      ss.conc_A[ss.conc_A[:] .< 0.001] .= 0.001
+      current_density[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
+      current_density[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dy
+      current_density[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
+
 
       Charge_Passed[:] = Charge_Passed[:] + current_density*sim_data.dt
 
