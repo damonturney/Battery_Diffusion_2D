@@ -137,7 +137,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
       ss.conc_A[:,:] = ss.conc_A[:,:] + conc_increment_dy[:,:] + conc_increment_dx[:,:]
 
       #Now I check if concentrations dropped below zero and then calculate the real current density  (the real current density on the corner of the spike will be ~2x higher than the Butler-Volmer boundary condition, which was calculated 40 lines above, because the concentration of the corner meshpoint gets reduced by the x and y direction boundary conditions simultaneously)
-      ss.conc_A[ss.conc_A[:] .< 0.001] .= 0.001
+      ss.conc_A[ -1000.0 .< ss.conc_A[:] .< 0.001] .= 0.001
       current_density[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
       current_density[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dy
       current_density[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy

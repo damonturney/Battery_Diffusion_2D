@@ -52,7 +52,7 @@ function create_system_state()
    ############## Define system arrays that WILL mutate during calculations but won't change in size and don't  ##############
    ############## have a dimension size that is dependent on the simulation duration or cycling procedure !     ##############
    conc_A   =    ones(num_y_mps,num_x_mps)*1000; #(mol / m3) 
-   conc_A[num_y_mps-spike_num_y_mps+2:end,1:spike_num_x_mps-1] .= 0.0
+   conc_A[num_y_mps-spike_num_y_mps+2:end,1:spike_num_x_mps-1] .= -1234.0
    total_conc  = conc_A[1,50]*3.0
    reaction_k  = 0.001
    Beta    =  0.5
