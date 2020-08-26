@@ -14,6 +14,7 @@ struct pulse_current_simulation_data_structure
    electrode_voltage_saved         ::Array{Float64,1}
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
+   superficial_cd_saved            ::Array{Float64,1}
    iterations_saved                ::Array{Float64,1}
    time_real_saved                 ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
@@ -49,6 +50,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
       ,zeros(length(iterations_saved))                                            #electrode_voltage_saved             
       ,zeros(length(iterations_saved),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
       ,zeros(length(iterations_saved),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(length(iterations_saved))                                            #superficial_cd_saved
       ,iterations_saved                                                           #iterations_saved
       ,iterations_saved*dt                                                        #time_real_saved     
       ,zeros(length(iterations_saved))                                            #main_loop_iteration_saved  
@@ -188,6 +190,7 @@ end  ## end of function run_simulation
 function record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
       sim_data.time_real_saved[k]          = sim_data.iterations[main_loop_iteration]*sim_data.dt[1]
       sim_data.current_density_saved[k,:]  = current_density[:]
+      sim_data.superficial_cd_saved[k]     = mean(current_density[:])*ss.num_x_mps/length(current_density[:])  #superficial area to real area
       sim_data.Charge_Passed_saved[k,:]    = Charge_Passed[:]   # coulombs per m3
       sim_data.electrode_voltage_saved[k]  = electrode_voltage
       sim_data.overvoltage_saved[k,:]      = overvoltage[:]
