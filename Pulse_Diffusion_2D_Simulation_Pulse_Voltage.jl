@@ -69,6 +69,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
    ss.electrode_voltage[1] = electrode_voltage1
    overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
    current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+   current_density_mesh_points = 1.0*current_density
    Charge_Passed = 0.0*current_density
    molar_flux = current_density/96500.0
 
@@ -88,11 +89,6 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
       r_y = ss.Diffusivity * sim_data.dt / ss.dy / ss.dy
       conc_next_timestep[1,:] = 1.0*ss.conc_A[1,:] 
 
-      conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
-      conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
-      conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
-      conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface
-      #println(conc_A_along_surface/ss.conc_A[1,50])
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
       if mod(main_loop_iteration*sim_data.dt, electrode_voltage1_ontime+electrode_voltage2_ontime) <= electrode_voltage1_ontime
          ss.electrode_voltage[1] = electrode_voltage1
@@ -137,10 +133,22 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
       ss.conc_A[:,:] = ss.conc_A[:,:] + conc_increment_dy[:,:] + conc_increment_dx[:,:]
 
       #Now I check if concentrations dropped below zero and then calculate the real current density  (the real current density on the corner of the spike will be ~2x higher than the Butler-Volmer boundary condition, which was calculated 40 lines above, because the concentration of the corner meshpoint gets reduced by the x and y direction boundary conditions simultaneously)
+      conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
+      conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
+      conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+      conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface
+      indices_below_zero = -1000.0 .< conc_A_along_surface[:] .< 0.001
       ss.conc_A[ -1000.0 .< ss.conc_A[:] .< 0.001] .= 0.001
-      current_density[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
-      current_density[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dy
-      current_density[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
+      if length(indices_below_zero) > 0
+         current_density_mesh_points[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
+         current_density_mesh_points[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dx
+         current_density_mesh_points[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
+         current_density[indices_below_zero .== 1] = current_density_mesh_points[indices_below_zero .== 1]  # Only fix the current density when it drops below zero.  My dx and dy values are 200nm, thus the first ~100 time steps (of 1E-5 seconds) do not allow the concentration boundary layer to penetrate far enough into the first grid space to create the correct value of current density based on F*D*delta_conc/dx, thus I only want to base the current density on F*D*delta_conc/dx when I absolutely have to (when conc drops below zero)
+         conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
+         conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
+         conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+         conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface
+      end
 
 
       Charge_Passed[:] = Charge_Passed[:] + current_density*sim_data.dt
