@@ -197,7 +197,7 @@ end  ## end of function run_simulation
 function record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
       sim_data.time_real_saved[k]          = sim_data.iterations[main_loop_iteration]*sim_data.dt[1]
       sim_data.current_density_saved[k,:]  = current_density[:]
-      sim_data.superficial_cd_saved[k]     = mean(current_density[:])*ss.num_x_mps/length(current_density[:])  #superficial area to real area
+      sim_data.superficial_cd_saved[k]     = mean(current_density[:])*length(current_density[:])/ss.num_x_mps  #superficial area to real area
       sim_data.Charge_Passed_saved[k,:]    = Charge_Passed[:]   # coulombs per m3
       sim_data.electrode_voltage_saved[k]  = electrode_voltage
       sim_data.overvoltage_saved[k,:]      = overvoltage[:]
