@@ -62,7 +62,7 @@ function plot_results_time_slice(ss,sim_data,k,concentration_color_map_minimum,c
    scatt_han = plot_axis_han.scatter(surface_xs4, surface_ys4, c=current_density4, s=7,  edgecolors="none", cmap=newcmp, vmin=-current_density_colormap_range, vmax=current_density_colormap_range, zorder=3) 
    plot_axis_han.set_xlim(xlim)
    plot_axis_han.set_ylim([0,ys[end,1]*1.1])
-   scatter_cb_han = PyPlot.colorbar(scatt_han, cax=scatt_cb_axes_han, orientation="horizontal", alpha=0.5, ticks=collect(range(-current_density_colormap_range,step=2,stop=current_density_colormap_range)))
+   scatter_cb_han = PyPlot.colorbar(scatt_han, cax=scatt_cb_axes_han, orientation="horizontal", alpha=0.5, ticks=collect(range(-current_density_colormap_range,step=current_density_colormap_range/4,stop=current_density_colormap_range)))
    scatter_cb_han.set_label("current density "*L"(mA/cm^2)", labelpad=1)
 end
 
