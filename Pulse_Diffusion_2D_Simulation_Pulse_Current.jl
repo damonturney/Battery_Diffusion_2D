@@ -129,10 +129,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
          current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
          current_density_error = mean(current_density) - current_density_target
          ss.electrode_voltage[1] = ss.electrode_voltage[1] - current_density_error*1E-7
-         @printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+         #@printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
          #sleep(0.5)
       end
-      @printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+      #@printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
       
       molar_flux[:] = current_density/96500.0   
       
