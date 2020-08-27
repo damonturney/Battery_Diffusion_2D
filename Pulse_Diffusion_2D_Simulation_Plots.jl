@@ -37,10 +37,10 @@ function plot_results_time_slice(ss,sim_data,k,concentration_color_map_minimum,c
    plot_axis_han.annotate("time-space ave.",                                                                      (0.85,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%4.1f mA/cm", mean(sim_data.current_density_saved[4:end,:])/10)*L"^2", (0.97,0.93), horizontalalignment="right", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("time"                                                              ,                   (0.88,0.04), horizontalalignment="left"  , xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate(Printf.@sprintf("%2.2fs",     sim_data.time_real_saved[k] ),                            (0.88,0.01), horizontalalignment="left"  , xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate(Printf.@sprintf("%2.2fs",     sim_data.time_real_saved[k] ),                            (0.99,0.01), horizontalalignment="right"  , xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("superficial",                                                                          (0.65,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate(Printf.@sprintf("%4.1f mA/cm", sim_data.superficial_cd_saved[k] )*L"^2",                (0.74,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate("ave. superficial",                                                                     (0.25,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate(Printf.@sprintf("%4.1f mA/cm", sim_data.superficial_cd_saved[k] )*L"^2",                (0.76,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate("ave. superficial",                                                                     (0.22,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%4.1f mA/cm", mean(sim_data.superficial_cd_saved[:]) )*L"^2",          (0.35,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    ref_electrode_axis_han.set_facecolor((0.5, 0.5, 0.5))
    ref_electrode_axis_han.get_yaxis().set_visible(false); ref_electrode_axis_han.get_xaxis().set_visible(false); ref_electrode_axis_han.spines["left"].set_visible(false); ref_electrode_axis_han.spines["right"].set_visible(false); ref_electrode_axis_han.spines["top"].set_visible(false); ref_electrode_axis_han.spines["bottom"].set_visible(false);
