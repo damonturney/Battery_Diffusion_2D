@@ -29,7 +29,7 @@ end
 ######## A function to create and initialize a single instance of the data structure 
 function pulse_current(ss, iterations, saved_iteration_spacing, current_density_target1, current_density1_ontime, current_density_target2, current_density2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
    println(" ");println(" ");println(" ");println(" ")
-   println("Creating CyclicV_operator.")
+   println("Starting Pulse Current Mode.")
 
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
@@ -63,10 +63,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
    short_x_num = ss.num_x_mps - ss.spike_num_x_mps
 
    conc_A_along_surface = zeros(ss.num_x_mps + ss.spike_num_y_mps + 1)  #WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-   conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
+   conc_A_along_surface[1:ss.spike_num_x_mps]                                       = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
    conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
-   conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
-   conc_B_along_surface = ss.total_conc .- conc_A_along_surface
+   conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+   conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface
    voltage_eq_along_surface = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
    current_density_target =current_density_target1
    overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
@@ -90,22 +90,36 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
    println("data saved to produced_data/"*sim_data.data_dictionary_name) 
    println("D dt/dx^2 is ",ss.Diffusivity*sim_data.dt[1]/ss.dx/ss.dx, " and must be less than 0.5")
 
-   conc_next_timestep = 0.0*ss.conc_A
+   conc_next_timestep = 1.0*ss.conc_A
 
-   #### This for loop increments time
-   ## It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
+   #These variables are for the predictor-corrector scheme
+   electrode_voltage_previous               = 1E10
+   electrode_voltage_previous_previous      = 1E10
+   current_density_target_previous          = 1E10
+   current_density_target_previous_previous = 1E10
+
+   ########### This for loop increments time.   It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
    for main_loop_iteration in 2:length(sim_data.iterations)
 
       r_x = ss.Diffusivity * sim_data.dt / ss.dx / ss.dx
       r_y = ss.Diffusivity * sim_data.dt / ss.dy / ss.dy
-      conc_next_timestep[1,:] = 1.0*ss.conc_A[1,:] 
 
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
-      electrode_voltage1, electrode_voltage1_ontime, electrode_voltage2, electrode_voltage2_ontime
+
+      #Update the current density target
+      current_density_target_previous_previous = current_density_target_previous
+      current_density_target_previous          = current_density_target
       if mod(main_loop_iteration*sim_data.dt, current_density1_ontime + current_density2_ontime) <= current_density1_ontime
          current_density_target = current_density_target1
       else
          current_density_target = current_density_target2
+      end
+      
+      # Calculate the electrode voltage by predictor-corrector
+      electrode_voltage_previous_previous = electrode_voltage_previous
+      electrode_voltage_previous          = ss.electrode_voltage[1]
+      if current_density_target == current_density_target_previous_previous
+         ss.electrode_voltage[1] = electrode_voltage_previous + (electrode_voltage_previous - electrode_voltage_previous_previous)
       end
       overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
       current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
@@ -115,10 +129,11 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
          current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
          current_density_error = mean(current_density) - current_density_target
          ss.electrode_voltage[1] = ss.electrode_voltage[1] - current_density_error*1E-7
-         #@printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e \n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] )
-         sleep(0.5)
+         @printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+         #sleep(0.5)
       end
-      #@printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e \n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] )
+      @printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+      
       molar_flux[:] = current_density/96500.0   
       
       # FOR DISCRETIZATION HELP SEE 2014 DISSERTATION BY ZANGANA !!
@@ -154,10 +169,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
       ss.conc_A[:,:] = ss.conc_A[:,:] + conc_increment_dy[:,:] + conc_increment_dx[:,:]
 
       #Now I check if concentrations dropped below zero and then calculate the real current density  (the real current density on the corner of the spike will be ~2x higher than the Butler-Volmer boundary condition, which was calculated 40 lines above, because the concentration of the corner meshpoint gets reduced by the x and y direction boundary conditions simultaneously)
-      conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
+      conc_A_along_surface[1:ss.spike_num_x_mps]                                       = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
       conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
-      conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
-      conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface
+      conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+      conc_B_along_surface[:]                                                          = ss.total_conc .- conc_A_along_surface
       indices_below_zero = -1000.0 .< conc_A_along_surface[:] .< 0.001
       ss.conc_A[ -1000.0 .< ss.conc_A[:] .< 0.001] .= 0.001
       if length(indices_below_zero) > 0
@@ -165,10 +180,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
          current_density_mesh_points[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dx
          current_density_mesh_points[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
          current_density[indices_below_zero .== 1] = current_density_mesh_points[indices_below_zero .== 1]  # Only fix the current density when it drops below zero.  My dx and dy values are 200nm, thus the first ~100 time steps (of 1E-5 seconds) do not allow the concentration boundary layer to penetrate far enough into the first grid space to create the correct value of current density based on F*D*delta_conc/dx, thus I only want to base the current density on F*D*delta_conc/dx when I absolutely have to (when conc drops below zero)
-         conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
+         conc_A_along_surface[1:ss.spike_num_x_mps]                                       = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
          conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
-         conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
-         conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface
+         conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+         conc_B_along_surface[:]                                                          = ss.total_conc .- conc_A_along_surface
       end
 
       Charge_Passed[:] = Charge_Passed[:] + current_density*sim_data.dt

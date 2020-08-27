@@ -27,7 +27,7 @@ end
 ######## A function to create and initialize a single instance of the data structure 
 function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltage1, electrode_voltage1_ontime, electrode_voltage2, electrode_voltage2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
    println(" ");println(" ");println(" ");println(" ")
-   println("Creating CyclicV_operator.")
+   println("Starting Pulse Voltage Mode.")
 
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
@@ -79,7 +79,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
    println("data saved to produced_data/"*sim_data.data_dictionary_name) 
    println("D dt/dx^2 is ",ss.Diffusivity*sim_data.dt[1]/ss.dx/ss.dx, " and must be less than 0.5")
 
-   conc_next_timestep = 0.0*ss.conc_A
+   conc_next_timestep = 1.0*ss.conc_A
 
    #### This for loop increments time
    ## It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
@@ -87,7 +87,6 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
 
       r_x = ss.Diffusivity * sim_data.dt / ss.dx / ss.dx
       r_y = ss.Diffusivity * sim_data.dt / ss.dy / ss.dy
-      conc_next_timestep[1,:] = 1.0*ss.conc_A[1,:] 
 
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
       if mod(main_loop_iteration*sim_data.dt, electrode_voltage1_ontime+electrode_voltage2_ontime) <= electrode_voltage1_ontime
