@@ -27,7 +27,7 @@ end
 
 
 ######## A function to create and initialize a single instance of the data structure 
-function pulse_current(ss, iterations, saved_iteration_spacing, current_density_target1, current_density1_ontime, current_density_target2, current_density2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
+function pulse_current(ss, iterations, saved_iteration_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime, dt)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
    println(" ");println(" ");println(" ");println(" ")
    println("Starting Pulse Current Mode.")
 
@@ -68,21 +68,22 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
    conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface
    voltage_eq_along_surface = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
-   current_density_target =current_density_target1
+   superficial_current_density_target = 1.0*superficial_current_density_target1
    overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
    current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
    current_density_mesh_points = 1.0*current_density
-   current_density_error = mean(current_density) - current_density_target
-   while abs(current_density_error) > 0.1
+   superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+   superficial_current_density_error = superficial_current_density - superficial_current_density_target
+   while abs(superficial_current_density_error) > 0.1
       overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
       current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
-      current_density_error = mean(current_density) - current_density_target
-      ss.electrode_voltage[1] = ss.electrode_voltage[1] - mean(current_density_error)*1E-7
-      #@printf("mean_current_density:%+0.7e   electrode_voltage:%+0.7e     cd_error:%0.7e \n", mean(current_density) , ss.electrode_voltage[1],  current_density_error)
+      superficial_current_density_error = superficial_current_density - superficial_current_density_target
+      ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
+      #@printf("superficial_current_density:%+0.7e   electrode_voltage:%+0.7e     cd_error:%0.7e \n", superficial_current_density , ss.electrode_voltage[1],  superficial_current_density_error)
       sleep(0.5)
    end
    Charge_Passed = 0.0*current_density
-   molar_flux = current_density/96500.0
+   molar_flux = current_density/96500.0 
    
    record_pulse_current_output(ss, sim_data, 1, 1, current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
 
@@ -95,8 +96,8 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
    #These variables are for the predictor-corrector scheme
    electrode_voltage_previous               = 1E10
    electrode_voltage_previous_previous      = 1E10
-   current_density_target_previous          = 1E10
-   current_density_target_previous_previous = 1E10
+   superficial_current_density_target_previous          = 1E10
+   superficial_current_density_target_previous_previous = 1E10
 
    ########### This for loop increments time.   It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
    for main_loop_iteration in 2:length(sim_data.iterations)
@@ -107,32 +108,34 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
 
       #Update the current density target
-      current_density_target_previous_previous = current_density_target_previous
-      current_density_target_previous          = current_density_target
+      superficial_current_density_target_previous_previous = superficial_current_density_target_previous
+      superficial_current_density_target_previous          = superficial_current_density_target
       if mod(main_loop_iteration*sim_data.dt, current_density1_ontime + current_density2_ontime) <= current_density1_ontime
-         current_density_target = current_density_target1
+         superficial_current_density_target = superficial_current_density_target1
       else
-         current_density_target = current_density_target2
+         superficial_current_density_target = superficial_current_density_target2
       end
       
       # Calculate the electrode voltage by predictor-corrector
       electrode_voltage_previous_previous = electrode_voltage_previous
       electrode_voltage_previous          = ss.electrode_voltage[1]
-      if current_density_target == current_density_target_previous_previous
+      if superficial_current_density_target == superficial_current_density_target_previous_previous
          ss.electrode_voltage[1] = electrode_voltage_previous + (electrode_voltage_previous - electrode_voltage_previous_previous)
       end
       overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
       current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
-      current_density_error = mean(current_density) - current_density_target
-      while abs(current_density_error) > 0.1
+      superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      superficial_current_density_error = superficial_current_density - superficial_current_density_target
+      while abs(superficial_current_density_error) > 0.1
          overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
          current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
-         current_density_error = mean(current_density) - current_density_target
-         ss.electrode_voltage[1] = ss.electrode_voltage[1] - current_density_error*1E-7
-         #@printf("loop:%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+         superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+         superficial_current_density_error = superficial_current_density - superficial_current_density_target
+         ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
+         #@printf("loop:%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
          #sleep(0.5)
       end
-      #@printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+      #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
       
       molar_flux[:] = current_density/96500.0   
       
@@ -192,7 +195,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
          @printf(":%-4i   real_time:%+0.7e \n", main_loop_iteration , main_loop_iteration*sim_data.dt[1] )
          record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
-         @printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+         @printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
    end
 
    end ## this is the end of the for loop of time steps
@@ -217,10 +220,10 @@ end  ## end of function run_simulation
 
 
 ####### A function to record a time series of the battery state during the CV operation
-function record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
+function record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface, electrode_voltage)
       sim_data.time_real_saved[k]          = sim_data.iterations[main_loop_iteration]*sim_data.dt[1]
       sim_data.current_density_saved[k,:]  = current_density[:]
-      sim_data.superficial_cd_saved[k]     = mean(current_density[:])*length(current_density[:])/ss.num_x_mps  #superficial area to real area
+      sim_data.superficial_cd_saved[k]     = superficial_current_density  #superficial area to real area
       sim_data.Charge_Passed_saved[k,:]    = Charge_Passed[:]   # coulombs per m3
       sim_data.electrode_voltage_saved[k]  = electrode_voltage
       sim_data.overvoltage_saved[k,:]      = overvoltage[:]
