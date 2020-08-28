@@ -77,9 +77,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
    while abs(superficial_current_density_error) > 0.1
       overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
       current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+      superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       superficial_current_density_error = superficial_current_density - superficial_current_density_target
       ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
-      #@printf("superficial_current_density:%+0.7e   electrode_voltage:%+0.7e     cd_error:%0.7e \n", superficial_current_density , ss.electrode_voltage[1],  superficial_current_density_error)
+      #@printf("superficial_current_density:%+0.7e   electrode_voltage:%+0.7e     superficial_cd_error:%0.7e \n", superficial_current_density , ss.electrode_voltage[1],  superficial_current_density_error)
       sleep(0.5)
    end
    Charge_Passed = 0.0*current_density
@@ -132,10 +133,10 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
          superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
          superficial_current_density_error = superficial_current_density - superficial_current_density_target
          ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
-         #@printf("loop:%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
+         #@printf("loop:%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
          #sleep(0.5)
       end
-      #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
+      #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
       
       molar_flux[:] = current_density/96500.0   
       
@@ -195,7 +196,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
          @printf(":%-4i   real_time:%+0.7e \n", main_loop_iteration , main_loop_iteration*sim_data.dt[1] )
          record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
-         @printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
+         @printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
    end
 
    end ## this is the end of the for loop of time steps
