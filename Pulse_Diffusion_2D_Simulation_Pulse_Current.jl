@@ -192,7 +192,8 @@ function pulse_current(ss, iterations, saved_iteration_spacing, current_density_
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
          @printf(":%-4i   real_time:%+0.7e \n", main_loop_iteration , main_loop_iteration*sim_data.dt[1] )
          record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
-      end
+         @printf("loop.%5.0i   mean_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   cd_error:%+0.7e\n", main_loop_iteration, mean(current_density) , ss.electrode_voltage[1] , current_density_target , current_density_error)
+   end
 
    end ## this is the end of the for loop of time steps
 
