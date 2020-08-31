@@ -67,6 +67,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
    conc_A_along_surface[1:ss.spike_num_x_mps]                                       = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
    conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
+   conc_A_along_surface_previous = 1.0*conc_A_along_surface
    conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface
    voltage_eq_along_surface = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
    
@@ -143,7 +144,6 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
       d_V_eq_d_conc_A = ( V_eq.(conc_A_along_surface[50] .+ 0.1, conc_B_along_surface[50] .- 0.1, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50]) .- voltage_eq_along_surface[50] ) / 0.1   
       d_conc_A_d_V_eq = 1 / d_V_eq_d_conc_A
       conc_A_eq_along_surface = conc_A_along_surface[50] .+ d_conc_A_d_V_eq .* overvoltage[50]
-      conc_A_eq_along_surface_previous = 1.0*conc_A_eq_along_surface
       indices_above_eq = conc_A_along_surface .> conc_A_eq_along_surface
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
          #println(ss.conc_A[end-2,29:37])
@@ -215,6 +215,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
          ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  = conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]
          conc_B_along_surface[:]                                  = ss.total_conc .- conc_A_along_surface
       end
+      conc_A_along_surface_previous[:] = conc_A_along_surface[:]
 
       Charge_Passed[:] = Charge_Passed[:] + current_density*sim_data.dt
 
