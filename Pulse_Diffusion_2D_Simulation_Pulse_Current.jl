@@ -209,7 +209,7 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
       indices_crossed_eq = (indices_below_eq .& indices_above_eq) .| (.~indices_below_eq .& .~indices_above_eq)
       if length(findall(indices_crossed_eq)) > 0
          ##### The line below is not physics-based.  You need to come up with a way to fix this problem based on physical equations.
-         conc_A_along_surface[indices_crossed_eq] .= conc_A_eq_along_surface_previous[indices_crossed_eq] .+ 0.85*( conc_A_eq_along_surface .- conc_A_eq_along_surface_previous[indices_crossed_eq] ) 
+         conc_A_along_surface[indices_crossed_eq] .= conc_A_along_surface_previous[indices_crossed_eq] .+ 0.85*( conc_A_eq_along_surface .- conc_A_along_surface_previous[indices_crossed_eq] ) 
          ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            = conc_A_along_surface[1:ss.spike_num_x_mps]
          ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] = conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps]
          ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  = conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]
