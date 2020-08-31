@@ -145,12 +145,6 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
       d_conc_A_d_V_eq = 1 / d_V_eq_d_conc_A
       conc_A_eq_along_surface = conc_A_along_surface[50] .+ d_conc_A_d_V_eq .* overvoltage[50]
       indices_above_eq = conc_A_along_surface .> conc_A_eq_along_surface
-      for k in findall(sim_data.iterations_saved.==main_loop_iteration)
-         #println(ss.conc_A[end-2,29:37])
-         #println(ss.conc_A[end-1,29:37])
-         #println(ss.conc_A[end-0,29:37])
-         @printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
-      end
 
 
       molar_flux[:] = current_density[:]/96500.0   
@@ -221,14 +215,11 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
 
       ##### Save data for post-analysis
       for k in findall(sim_data.iterations_saved.==main_loop_iteration)
-         #println(ss.conc_A[end-2,29:37])
-         #println(ss.conc_A[end-1,29:37])
-         #println(ss.conc_A[end-0,29:37])
          #@printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
          #println(conc_A_along_surface[ss.spike_num_x_mps + ss.spike_num_y_mps - 1 : ss.spike_num_x_mps + ss.spike_num_y_mps + 2 ])
          @printf(":%-4i   real_time:%+0.7e \n", main_loop_iteration , main_loop_iteration*sim_data.dt )
          record_pulse_current_output(ss, sim_data, k, main_loop_iteration, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface, ss.electrode_voltage[1])
-         @printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
+         #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
       end
 
    end ## this is the end of the for loop of time steps
