@@ -8,7 +8,7 @@ import PyPlot
 function plot_results_time_slice(ss,sim_data,k,concentration_color_map_minimum,current_density_colormap_range)
    xs = collect(range(0.0, 4*ss.num_x_mps*ss.dx, length=4*ss.num_x_mps))*1E6
    ys = reverse(ss.locations_y[:,1])*1E6
-   conc_data_cat = cat(sim_data.conc_saved[k,:,:],reverse(sim_data.conc_saved[k,:,:],dims=2),sim_data.conc_saved[k,:,:],reverse(sim_data.conc_saved[k,:,:],dims=2);dims=2)/1000 #to convert from moles/m3 to moles/L
+   conc_data_cat = cat(sim_data.conc_A_saved[k,:,:],reverse(sim_data.conc_A_saved[k,:,:],dims=2),sim_data.conc_A_saved[k,:,:],reverse(sim_data.conc_A_saved[k,:,:],dims=2);dims=2)/1000 #to convert from moles/m3 to moles/L
    plot_figure_han = PyPlot.figure(figsize=((4*ss.num_x_mps+100)/100,(ss.num_y_mps+100)/100))
    PyPlot.rc("font", size=9)
    plot_axis_han = plot_figure_han.add_axes([0.12,0.29,0.84,0.7])

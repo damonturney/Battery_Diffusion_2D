@@ -19,7 +19,7 @@ struct pulse_voltage_simulation_data_structure
    time_real_saved                 ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
    Charge_Passed_saved             ::Array{Float64,2}
-   conc_saved                      ::Array{Float64,3}
+   conc_A_saved                      ::Array{Float64,3}
    conc_A_along_surface            ::Array{Float64,2}
 end
 
@@ -53,7 +53,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
       ,iterations_saved*dt                                                        #time_real_saved     
       ,zeros(length(iterations_saved))                                            #main_loop_iteration_saved  
       ,zeros(length(iterations_saved),ss.num_x_mps + ss.spike_num_y_mps + 1)      #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-      ,zeros(length(iterations_saved),ss.num_y_mps,ss.num_x_mps)                  #conc_saved
+      ,zeros(length(iterations_saved),ss.num_y_mps,ss.num_x_mps)                  #conc_A_saved
       ,zeros(length(iterations_saved),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #conc_A_along_surface
    )
 
@@ -69,7 +69,7 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
    ss.electrode_voltage[1] = electrode_voltage1
    overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
    current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
-   current_density_mesh_points = 1.0*current_density
+   current_density_from_conc_A = 1.0*current_density
    Charge_Passed = 0.0*current_density
    molar_flux = current_density/96500.0
 
@@ -139,10 +139,10 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
       indices_below_zero = -1000.0 .< conc_A_along_surface[:] .< 0.001
       ss.conc_A[ -1000.0 .< ss.conc_A[:] .< 0.001] .= 0.001
       if length(indices_below_zero) > 0
-         current_density_mesh_points[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
-         current_density_mesh_points[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dx
-         current_density_mesh_points[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
-         current_density[indices_below_zero .== 1] = current_density_mesh_points[indices_below_zero .== 1]  # Only fix the current density when it drops below zero.  My dx and dy values are 200nm, thus the first ~100 time steps (of 1E-5 seconds) do not allow the concentration boundary layer to penetrate far enough into the first grid space to create the correct value of current density based on F*D*delta_conc/dx, thus I only want to base the current density on F*D*delta_conc/dx when I absolutely have to (when conc drops below zero)
+         current_density_from_conc_A[1:ss.spike_num_x_mps]                                       = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+0,1:ss.spike_num_x_mps]               - ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]            )/ss.dy
+         current_density_from_conc_A[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = -96500*ss.Diffusivity*(ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps+1]  - ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] )/ss.dx
+         current_density_from_conc_A[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = -96500*ss.Diffusivity*(ss.conc_A[ss.num_y_mps-1,ss.spike_num_x_mps:ss.num_x_mps]   - ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  )/ss.dy
+         current_density[indices_below_zero .== 1] = current_density_from_conc_A[indices_below_zero .== 1]  # Only fix the current density when it drops below zero.  My dx and dy values are 200nm, thus the first ~100 time steps (of 1E-5 seconds) do not allow the concentration boundary layer to penetrate far enough into the first grid space to create the correct value of current density based on F*D*delta_conc/dx, thus I only want to base the current density on F*D*delta_conc/dx when I absolutely have to (when conc drops below zero)
          conc_A_along_surface[1:ss.spike_num_x_mps] = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
          conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
          conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end] = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
@@ -188,7 +188,7 @@ function record_pulse_voltage_output(ss, sim_data, k, main_loop_iteration, curre
    sim_data.Charge_Passed_saved[k,:]    = Charge_Passed[:]   # coulombs per m3
    sim_data.electrode_voltage_saved[k]  = electrode_voltage
    sim_data.overvoltage_saved[k,:]      = overvoltage[:]
-   sim_data.conc_saved[k,:,:]           = ss.conc_A[:,:]
+   sim_data.conc_A_saved[k,:,:]           = ss.conc_A[:,:]
    sim_data.conc_A_along_surface[k,:]   = conc_A_along_surface[:]
 end
 

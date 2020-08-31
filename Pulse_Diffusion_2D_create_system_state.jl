@@ -54,7 +54,7 @@ function create_system_state()
    conc_A   =    ones(num_y_mps,num_x_mps)*1000; #(mol / m3) 
    conc_A[num_y_mps-spike_num_y_mps+2:end,1:spike_num_x_mps-1] .= -1234.0
    total_conc  = conc_A[1,50]*3.0
-   reaction_k  = 0.001
+   reaction_k  = 0.2
    Beta    =  0.5
 
    #ss stands for system state
@@ -78,8 +78,14 @@ function create_system_state()
    return(system_state)
 end
 
-function load_previous_state(file_datenumber)
+
+
+
+function load_previous_state(file_datenumber,iteration_number=0)
    ss       = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "system_state",0);
    sim_data = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "sim_data",0);
+   if iteration_number != 0
+      ss.conc_A[:,:] = 1.0*sim_data.conc_A_saved[iteration_number,:,:]
+   end
    return(ss,sim_data)
 end

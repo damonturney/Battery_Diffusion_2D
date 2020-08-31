@@ -15,7 +15,8 @@ module Diffusion_2D
    using FileIO
    using Dates
    import Statistics.mean
-
+   import Statistics.abs
+   abs(4)
 
    if Sys.isapple()
       cd("/Users/damon/Desktop/BACKED_UP/WorkFiles/ReportsPublicationsPatents/20200308_Patent_GravityFlat_PulseCharged_Zinc_Electrodes/Science_Journal_Publication/20200820_Pulse_Diffusion_2D_Simulation/")
