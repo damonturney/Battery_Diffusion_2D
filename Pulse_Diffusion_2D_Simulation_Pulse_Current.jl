@@ -72,13 +72,13 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
    
    superficial_current_density_target = 1.0*superficial_current_density_target1
    overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface[:]
-   current_density = -96500*ss.reaction_k .*abs.(overvoltage[:]).* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+   current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
    current_density_from_conc_A = 1.0*current_density
    superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
    superficial_current_density_error = superficial_current_density - superficial_current_density_target
    while abs(superficial_current_density_error) > 0.1
       overvoltage = ss.electrode_voltage[1] .- voltage_eq_along_surface
-      current_density = -96500*ss.reaction_k .*abs.(overvoltage[:]).* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
+      current_density = -96500*ss.reaction_k .* sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage) )  #(A/m2)
       superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       superficial_current_density_error = superficial_current_density - superficial_current_density_target
       ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
@@ -126,12 +126,12 @@ function pulse_current(ss, iterations, saved_iteration_spacing, superficial_curr
          ss.electrode_voltage[1] = electrode_voltage_previous + (electrode_voltage_previous - electrode_voltage_previous_previous)
       end
       overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
-      current_density = -96500*ss.reaction_k .*abs.(overvoltage[:]).*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
+      current_density = -96500*ss.reaction_k .*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
       superficial_current_density = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       superficial_current_density_error = superficial_current_density - superficial_current_density_target
       while abs(superficial_current_density_error) > 0.1
          overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
-         current_density[:] = -96500*ss.reaction_k .*abs.(overvoltage[:]).*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
+         current_density[:] = -96500*ss.reaction_k .*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
          superficial_current_density       = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
          superficial_current_density_error = superficial_current_density - superficial_current_density_target
          ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error*1E-7
