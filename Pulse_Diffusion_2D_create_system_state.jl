@@ -10,8 +10,15 @@ function V_eq(conc_A, conc_B, conc_A_re, conc_B_re )
    return( 8.3*300/96500*log( conc_A/conc_A_re * conc_B_re/conc_B ) )  #The reaction is:      A + e- <-> B        mu_A - F*V_eq = mu_B          R*T*ln(conc_A) - F*V_eq = R*T*ln(conc_B) + C         V_eq = RT/F ln(conc_A/conc_B) +C        The reference electrode is in the "bulk'
 end
 
+#### Equilibrium concentration at the interface of the electrode.  It returns the conc_A that is in equilibrium with the electrode voltage
+function conc_A_eq(electrode_voltage, total_conc, conc_A_re, conc_B_re )
+   return(1/(1/(exp(electrode_voltage/8.3/300*96500)*conc_A_re/conc_B_re)+ 1)*total_conc)
+end 
+
 
 struct system_state_structure
+   parent_dictionary  ::String
+   accumulated_simulation_time ::Array{Float64,1}
    Diffusivity        ::Float64
    dx                 ::Float64
    dy                 ::Float64
@@ -43,7 +50,7 @@ function create_system_state()
    locations_y = reverse(collect(range(0.0, num_y_mps*dy, length=num_y_mps))*transpose(ones(num_x_mps)),dims=1)
 
    ## Describing the electrolyte domain
-   Diffusivity=1.E-11 #in units of m^2/s
+   Diffusivity=1.E-10 #in units of m^2/s
 
    ## Describing the spike 
    spike_num_x_mps = 30
@@ -59,6 +66,8 @@ function create_system_state()
 
    #ss stands for system state
    system_state=system_state_structure(
+      "virginnewstate_dictionary_results.jld2",   #parent_dictionary_name
+      [0.0],                #accumulated_simulation_time
       Diffusivity,         #Diffusivity       
       dx,                  #dx
       dy,                  #dy
@@ -70,7 +79,7 @@ function create_system_state()
       spike_num_y_mps,     #spike_num_y_mps
       conc_A,              #concentration of A  
       total_conc,          #concentration of A  
-      [0.0],             #this is the working electrode's voltage wrt the reference electrode 
+      [0.0],               #this is the working electrode's voltage wrt the reference electrode 
       reaction_k,          #reaction_k
       Beta                 #Beta
    )
