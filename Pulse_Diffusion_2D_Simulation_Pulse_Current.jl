@@ -274,7 +274,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    println("using FileIO")
    println("simdata = get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"simdata\",0);")
    println("ss =       get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"system_state\",0);")
-   println("ss,simdata = load_previous_state(\""*simdata.data_dictionary_name[1:15]*"\")")
+   println("ss,simdata = Diffusion_2D.load_previous_state(\""*simdata.data_dictionary_name[1:14]*"\")")
 
    ### Give the caller the resulting data
    ss.accumulated_simulation_time[1] = time[1]
