@@ -79,6 +79,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    molar_flux                                            = 0.0*conc_A_along_surface
    time                                                  = [ss.accumulated_simulation_time[1]]
    simdata_i                                             = 1
+   dt_reduction_factor                                   = 1
    conc_next_timestep                                    = copy(ss.conc_A)
    conc_A_reduced_dt                                     = copy(ss.conc_A)
    conc_increment_dx                                     = 0.0*ss.conc_A
@@ -97,7 +98,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
          #@printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
          #println(conc_A_along_surface[ss.spike_num_x_mps + ss.spike_num_y_mps - 1 : ss.spike_num_x_mps + ss.spike_num_y_mps + 2 ])
-         @printf(":%-4i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+         @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
          record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
          #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
          simdata_i = simdata_i + 1
