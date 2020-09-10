@@ -165,12 +165,12 @@ function pulse_voltage(ss, iterations, saved_iteration_spacing, electrode_voltag
    save("produced_data/"*simdata.data_dictionary_name, Dict("system_state"=>ss,"simdata"=>simdata))
 
 
-   ### Print some very basic output
-   print("simulated duration is ",simdata.iterations[end]*simdata.dt[1], " seconds\n")
+   ### Print some basic output
+   print("simulated duration is ",simulation_duration, " seconds\n")
    println("using FileIO")
    println("simdata = get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"simdata\",0);")
    println("ss =       get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"system_state\",0);")
-   println("Number of saved timesteps: "*string(length(simdata.iterations_saved)))
+   println("ss,simdata = Diffusion_2D.load_previous_state(\""*simdata.data_dictionary_name[1:14]*"\");")
 
    return(ss,simdata)
 
