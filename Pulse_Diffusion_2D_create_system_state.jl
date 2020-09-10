@@ -30,7 +30,7 @@ struct system_state_structure
    spike_num_y_mps    ::Int  #number of meshpoints
    conc_A             ::Array{Float64,2}
    total_conc         ::Float64
-   electrode_voltage  ::Array{Float64,1}  #this is the working electrode's voltage wrt the reference electrode 
+   electrode_voltage  ::Array{Float64,1}  #electrode voltage wrt the reference electrode 
    reaction_k         ::Float64
    Beta               ::Float64
 end
@@ -77,9 +77,9 @@ function create_system_state()
       num_y_mps,           #num_y_mps
       spike_num_x_mps,     #spike_num_x_mps
       spike_num_y_mps,     #spike_num_y_mps
-      conc_A,              #concentration of A  
-      total_conc,          #concentration of A  
-      [0.0],               #this is the working electrode's voltage wrt the reference electrode 
+      conc_A,              #concentration of A 
+      total_conc,          #concentration of A 
+      [0.0],               #electrode_voltage  (wrt the reference electrode)
       reaction_k,          #reaction_k
       Beta                 #Beta
    )

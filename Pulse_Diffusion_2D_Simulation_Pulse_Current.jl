@@ -66,8 +66,8 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    conc_A_along_surface_previous                                                    = copy(conc_A_along_surface)
    r_x                                                   = ss.Diffusivity * dt_biggest / ss.dx / ss.dx
    r_y                                                   = ss.Diffusivity * dt_biggest / ss.dy / ss.dy
-   overvoltage                                           = 0.0*conc_A_along_surface
-   voltage_eq_along_surface                              = 0.0*conc_A_along_surface
+   voltage_eq_along_surface                              = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
+   overvoltage                                           = ss.electrode_voltage[1] .- voltage_eq_along_surface[:]
    current_density                                       = 0.0*conc_A_along_surface
    Charge_Passed                                         = 0.0*conc_A_along_surface
    superficial_current_density                           = [0.0]
