@@ -11,7 +11,7 @@ struct pulse_current_simulation_data_structure
    simulation_duration             ::Float64
    dt_biggest                      ::Float64
    saved_dt_spacing                ::Float64
-   saved_times                     ::Array{Float64,1}
+   time_saved                      ::Array{Float64,1}
    electrode_voltage_saved         ::Array{Float64,1}
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
@@ -39,7 +39,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       ,simulation_duration                                                   #simulation_duration
       ,dt_biggest                                                            #dt_biggest
       ,saved_dt_spacing                                                      #saved_dt_spacing
-      ,zeros(length(save_data_time_thresholds.+1))                                            #saved_times 
+      ,zeros(length(save_data_time_thresholds.+1))                                            #time_saved 
       ,zeros(length(save_data_time_thresholds.+1))                                            #electrode_voltage_saved             
       ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
       ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
@@ -367,7 +367,7 @@ end  ## end of function pulse_current(ss, simulation_duration, dt_biggest, saved
 
 ####### A function to record a time series of the battery state during the CV operation
 function record_pulse_current_output(ss, simdata, simdata_i , time, main_loop_iteration, electrode_voltage, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface)
-      simdata.saved_times[simdata_i]              = time
+      simdata.time_saved[simdata_i]               = time
       simdata.main_loop_iteration_saved[simdata_i]= main_loop_iteration
       simdata.electrode_voltage_saved[simdata_i]  = electrode_voltage
       simdata.current_density_saved[simdata_i,:]  = current_density[:]
