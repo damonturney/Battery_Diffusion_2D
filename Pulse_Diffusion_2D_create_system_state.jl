@@ -17,8 +17,8 @@ end
 
 
 struct system_state_structure
-   parent_dictionary  ::String
-   accumulated_simulation_time ::Array{Float64,1}
+   parent_operation_dictionary   ::Array{String,1}
+   accumulated_simulation_time   ::Array{Float64,1}
    Diffusivity        ::Float64
    dx                 ::Float64
    dy                 ::Float64
@@ -66,8 +66,8 @@ function create_system_state()
 
    #ss stands for system state
    system_state=system_state_structure(
-      "virginnewstate_dictionary_results.jld2",   #parent_dictionary_name
-      [0.0],                #accumulated_simulation_time
+      ["virginnewstate_dictionary_results.jld2"],   #parent_operation
+      [0.0],               #accumulated_simulation_time
       Diffusivity,         #Diffusivity       
       dx,                  #dx
       dy,                  #dy
