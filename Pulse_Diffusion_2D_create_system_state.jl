@@ -15,6 +15,9 @@ function conc_A_eq(electrode_voltage, total_conc, conc_A_re, conc_B_re )
    return(1/(1/(exp(electrode_voltage/8.3/300*96500)*conc_A_re/conc_B_re)+ 1)*total_conc)
 end 
 
+function Current_Density(reaction_k, Beta, conc_A_along_surface, conc_B_along_surface, overvoltage)
+   return(-96500*reaction_k*(conc_A_along_surface)* ( exp(-(1.0 - Beta)*96500/8.3/300*overvoltage ) -  exp.(Beta*300/8.3/300*overvoltage) ) )  #(A/m2)
+end
 
 struct system_state_structure
    parent_operation_dictionary   ::Array{String,1}

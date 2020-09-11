@@ -23,7 +23,7 @@ end
 
 
 ######## A function to create and initialize a single instance of the data structure 
-function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime)   # units are always mks
+function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime, electrode_voltage_limit)   # units are always mks
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
    if saved_dt_spacing <= dt_biggest; saved_dt_spacing = dt_biggest; end;
@@ -94,7 +94,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
          #@printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
          #println(conc_A_along_surface[ss.spike_num_x_mps + ss.spike_num_y_mps - 1 : ss.spike_num_x_mps + ss.spike_num_y_mps + 2 ])
-         @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+         @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e   V_eq_corner:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1], voltage_eq_along_surface[180])
          record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
          #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
          simdata_i = simdata_i + 1
@@ -119,20 +119,20 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       electrode_voltage_previous[1]          = ss.electrode_voltage[1]
       if superficial_current_density_target[1] == superficial_current_density_target_previous_previous[1]
          ss.electrode_voltage[1] = electrode_voltage_previous[1] + (electrode_voltage_previous[1] - electrode_voltage_previous_previous[1])
-         if ss.electrode_voltage[1] > 0.5
-            ss.electrode_voltage[1] = 0.5
+         if ss.electrode_voltage[1] > abs(electrode_voltage_limit)
+            ss.electrode_voltage[1] = abs(electrode_voltage_limit)
          end
       end 
       # Correct (aka adjust) the value of ss.electrode_voltage[1] until it creates exactly the correct current, then afterwards hold ss.electrode_voltage[1] steady whil the current strays away from the target value until the Arbin once again enforced the correct current
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
       overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface[:]
-      current_density = -96500*ss.reaction_k .*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
+      current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:]) #(A/m2)
       superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       superficial_current_density_error = superficial_current_density - superficial_current_density_target
-      while (abs(superficial_current_density_error[1]) > 0.1) & (abs(ss.electrode_voltage[1]) < 0.5)
+      while (abs(superficial_current_density_error[1]) > 0.1) & (abs(ss.electrode_voltage[1]) < abs(electrode_voltage_limit))
          ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error[1]*1E-7
          overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
-         current_density = -96500*ss.reaction_k .*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
+         current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:])  #(A/m2)
          superficial_current_density[1]       = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
          superficial_current_density_error = superficial_current_density - superficial_current_density_target
          #@printf("loop:%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
@@ -140,13 +140,6 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       conc_A_eq_along_surface[1] = conc_A_eq(ss.electrode_voltage[1], ss.total_conc, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50] ) 
       molar_flux[:] = current_density[:]/96500.0
       #@printf("r:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
-
-
-      # println(ss.conc_A[end-3,29:38])
-      # println(ss.conc_A[end-2,29:38])
-      # println(ss.conc_A[end-1,29:38])
-      # println(ss.conc_A[end-0,29:38])
-
 
       ####### Calculate the change in concentration at the interfacial locations.  "Reduced" means the reduction in dt so that overshooting instability doesn't kill the simulation.
       conc_A_along_surface_previous[:] = conc_A_along_surface[:]
@@ -176,33 +169,32 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] + conc_increment_dy[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] + conc_increment_dx[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] 
       conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                + conc_increment_dy[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  + conc_increment_dx[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
       ## Next, calculate the reduction of dt_biggest that is necessary to avoid the interfacial concentration overshooting the equilibrium value
-      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 4*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) ) ),dims=1)))  #the 0.2 is to say we don't want the concentration changing by more than 20% of the distance to its equilibrium
+      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 2*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) ) ),dims=1)))  #the 0.2 is to say we don't want the concentration changing by more than 20% of the distance to its equilibrium
       ## Next, calculate the time-evolution of interfacial concentration with "reduced" timesteps
       dt_reduced = simdata.dt_biggest / dt_reduction_factor
       r_x_reduced = ss.Diffusivity * dt_reduced / ss.dx / ss.dx
       r_y_reduced = ss.Diffusivity * dt_reduced / ss.dy / ss.dy   
       conc_next_timestep[:,:] = ss.conc_A[:,:]
       conc_A_reduced_dt[:,:]  = ss.conc_A[:,:]
-      # println(conc_A_along_surface[178:183])
-      # println(conc_A_eq_along_surface[1])
-      # println(conc_A_along_surface_trial[178:183])
-      # println(10*(conc_A_along_surface[178:183] .- conc_A_along_surface_trial[178:183]))
-      # println(conc_A_eq_along_surface .- conc_A_along_surface[178:183])
-      # println(conc_increment_dy[end-3,29:38])
-      # println(conc_increment_dy[end-2,29:38])
-      # println(conc_increment_dy[end-1,29:38])
-      # println(conc_increment_dy[end-0,29:38])
-      # println(conc_increment_dx[end-3,29:38])
-      # println(conc_increment_dx[end-2,29:38])
-      # println(conc_increment_dx[end-1,29:38])
-      # println(conc_increment_dx[end-0,29:38])
+      # println(ss.conc_A[end-3,29:38])
+      # println(ss.conc_A[end-2,29:38])
+      # println(ss.conc_A[end-1,29:38])
+      # println(ss.conc_A[end-0,29:38])
+      # println("beg",conc_A_along_surface[178:183])
+      # println("eq",conc_A_eq_along_surface[1])
+      # println("trial",conc_A_along_surface_trial[178:183])
+      # println("num",4*(conc_A_along_surface[178:183] .- conc_A_along_surface_trial[178:183]))
+      # println("denom",conc_A_eq_along_surface .- conc_A_along_surface[178:183])
+      # println(conc_increment_dy[end-3,29:38] + conc_increment_dx[end-3,29:38])
+      # println(conc_increment_dy[end-2,29:38] + conc_increment_dx[end-2,29:38])
+      # println(conc_increment_dy[end-1,29:38] + conc_increment_dx[end-1,29:38])
+      # println(conc_increment_dy[end-0,29:38] + conc_increment_dx[end-0,29:38])
       # println(molar_flux[176:188])
       overvoltage_reduced_dt_average                 = 0.0*overvoltage[:]                
       current_density_reduced_dt_average             = 0.0*current_density[:]            
-      molar_flux_reduced_dt_average                  = 0.0*molar_flux[:]                 
-      superficial_current_density_reduced_dt_average = 0.0*superficial_current_density[1]
       conc_A_along_surface_reduced_dt_average        = 0.0*conc_A_along_surface[:]
-      #@printf("rr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
+      # println("curr_den:", current_density[180:193])
+      # @printf("rr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    V_eq_corner:%+0.7e   curr_density:%+0.5e    sup_curr_den:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,60], conc_A_along_surface[210], conc_A_along_surface_reduced_dt_average[210], ss.electrode_voltage[1], voltage_eq_along_surface[210], current_density[210] , superficial_current_density[1] )
       for t = 1:dt_reduction_factor
          #Fickian change in interfacial concentrations due to y-direction gradients
          conc_next_timestep[:,:] = conc_A_reduced_dt[:,:]
@@ -236,8 +228,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
          conc_B_along_surface[:] = ss.total_conc .- conc_A_along_surface[:]
          voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, conc_A_reduced_dt[1,50], ss.total_conc - conc_A_reduced_dt[1,50])  #The reference electrode is located at [1,50]
          overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
-         current_density[:] = -96500*ss.reaction_k .*sqrt.(conc_A_along_surface[:].*conc_B_along_surface[:]).* ( exp.(-(1.0 .- ss.Beta)*96500/8.3/300 .*overvoltage[:] ) .-  exp.(ss.Beta*300/8.3/300 .*overvoltage[:]) )  #(A/m2)
-         superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+         current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:])  #(A/m2)
          molar_flux[:] = current_density[:]/96500.0
 
          #Build the time-averaged values during these "reduced" time steps
@@ -251,30 +242,33 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
          # println(conc_increment_dx[end-0,29:38])
          # println(molar_flux[176:188])
 
-         #@printf("rrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
+         # @printf("rrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
          conc_A_along_surface_reduced_dt_average[:]     = conc_A_along_surface_reduced_dt_average[:]     + conc_A_along_surface[:]        / dt_reduction_factor       
-         #@printf("rrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
+         # @printf("rrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
          overvoltage_reduced_dt_average[:]              = overvoltage_reduced_dt_average[:]              + overvoltage[:]                 / dt_reduction_factor                
          current_density_reduced_dt_average[:]          = current_density_reduced_dt_average[:]          + current_density[:]             / dt_reduction_factor           
-         molar_flux_reduced_dt_average[:]               = molar_flux_reduced_dt_average[:]               + molar_flux[:]                  / dt_reduction_factor                 
-         superficial_current_density_reduced_dt_average = superficial_current_density_reduced_dt_average + superficial_current_density[1] / dt_reduction_factor
          #@printf("r:%-9i   dt_red_fac:%+0.7e  sup_cd:%+0.7e    electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, dt_reduction_factor, superficial_current_density[1] , ss.electrode_voltage[1] , superficial_current_density_target[1] , superficial_current_density_error[1])
          #@printf("r:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30],  ss.electrode_voltage[1] )
+         # @printf("rrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    V_eq_corner:%+0.7e   curr_density:%+0.5e    sup_curr_den:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,60], conc_A_along_surface[210], conc_A_along_surface_reduced_dt_average[210], ss.electrode_voltage[1], voltage_eq_along_surface[210], current_density[210] , superficial_current_density[1] )
 
       end   #end of for t = 1:dt_reduction_factor
 
-      #@printf("rrrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
+      # @printf("rrrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
 
       #Revert to the time-averaged values of conc_A_along_surface, overvoltage, current_density, molar_flux, superficial_current_density along the interface during this timestep
       conc_A_along_surface[:]        = conc_A_along_surface_reduced_dt_average[:]
       overvoltage[:]                 = overvoltage_reduced_dt_average[:]
       current_density[:]             = current_density_reduced_dt_average[:]
-      molar_flux[:]                  = molar_flux_reduced_dt_average[:]
-      superficial_current_density[1] = superficial_current_density_reduced_dt_average[1]
-      Charge_Passed[:] = Charge_Passed[:] + current_density*simdata.dt_biggest
+      superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      molar_flux[:]                  = current_density[:]/96500.0
+      Charge_Passed[:]               = Charge_Passed[:] + current_density*simdata.dt_biggest
 
-      #@printf("rrrrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
-
+      # @printf("rrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    V_eq_corner:%+0.7e   curr_density:%+0.5e    sup_curr_den:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,60], conc_A_along_surface[210], conc_A_along_surface_reduced_dt_average[210], ss.electrode_voltage[1], voltage_eq_along_surface[210], current_density[210] , superficial_current_density[1] )
+      # println("curr_den:", current_density[180:193])
+      # println(conc_A_reduced_dt[end-3,29:38])
+      # println(conc_A_reduced_dt[end-2,29:38])
+      # println(conc_A_reduced_dt[end-1,29:38])
+      # println(conc_A_reduced_dt[end-0,29:38])
 
       #println(conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps])
 
@@ -345,6 +339,8 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
 
    #Print and store the final data      
    @printf(":%-4i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+   ss.accumulated_simulation_time[1] = time[1]
+   ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
    ### Save the results to hard disk
    simdata.stop_time[1]=Dates.format(Dates.now(),"yyyymmddHHMMSS")
@@ -358,8 +354,6 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    println("ss,simdata = Diffusion_2D.load_previous_state(\""*simdata.data_dictionary_name[1:14]*"\");")
 
    ### Give the caller the resulting data
-   ss.accumulated_simulation_time[1] = time[1]
-   ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    return(ss,simdata)
 
 end  ## end of function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
