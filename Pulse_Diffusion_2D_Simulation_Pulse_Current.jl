@@ -119,9 +119,8 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       electrode_voltage_previous[1]          = ss.electrode_voltage[1]
       if superficial_current_density_target[1] == superficial_current_density_target_previous_previous[1]
          ss.electrode_voltage[1] = electrode_voltage_previous[1] + (electrode_voltage_previous[1] - electrode_voltage_previous_previous[1])
-         if ss.electrode_voltage[1] > abs(electrode_voltage_limit)
-            ss.electrode_voltage[1] = abs(electrode_voltage_limit)
-         end
+         if ss.electrode_voltage[1] > +abs(electrode_voltage_limit); ss.electrode_voltage[1] = +abs(electrode_voltage_limit); end;
+         if ss.electrode_voltage[1] < -abs(electrode_voltage_limit); ss.electrode_voltage[1] = -abs(electrode_voltage_limit); end;
       end 
       # Correct (aka adjust) the value of ss.electrode_voltage[1] until it creates exactly the correct current, then afterwards hold ss.electrode_voltage[1] steady whil the current strays away from the target value until the Arbin once again enforced the correct current
       voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
@@ -338,7 +337,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    end   #end of time stepping: while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
    #Print and store the final data      
-   @printf(":%-4i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+   @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
    ss.accumulated_simulation_time[1] = time[1]
    ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
