@@ -168,7 +168,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] + conc_increment_dy[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] + conc_increment_dx[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] 
       conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                + conc_increment_dy[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  + conc_increment_dx[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
       ## Next, calculate the reduction of dt_biggest that is necessary to avoid the interfacial concentration overshooting the equilibrium value
-      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 2*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) ) ),dims=1)))  #the 0.2 is to say we don't want the concentration changing by more than 20% of the distance to its equilibrium
+      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 3*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) ) ),dims=1)))  #the 0.2 is to say we don't want the concentration changing by more than 20% of the distance to its equilibrium
       ## Next, calculate the time-evolution of interfacial concentration with "reduced" timesteps
       dt_reduced = simdata.dt_biggest / dt_reduction_factor
       r_x_reduced = ss.Diffusivity * dt_reduced / ss.dx / ss.dx
