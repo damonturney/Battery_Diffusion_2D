@@ -82,8 +82,8 @@ function make_movie(ss,simdata,start_frame_num,end_frame_num,concentration_color
       PyPlot.savefig("produced_data/video_images_"*simdata.data_dictionary_name[1:14]*"/"*Printf.@sprintf("%04d", image_num)*".png", dpi=300)
       PyPlot.close("all") 
    end
-   println("frame num: "*string(frame_num))
-   plot_results_time_slice(ss,simdata,frame_num,concentration_color_map_minimum, current_density_colormap_range)
+   println("frame num: "*string(end_frame_num))
+   plot_results_time_slice(ss,simdata,end_frame_num,concentration_color_map_minimum, current_density_colormap_range)
    PyPlot.savefig("produced_data/video_images_"*simdata.data_dictionary_name[1:14]*"/"*Printf.@sprintf("%04d", image_num+1)*".png", dpi=300)
    PyPlot.close("all") 
    bash_command ="ffmpeg -start_number 1 -i produced_data/video_images_"*simdata.data_dictionary_name[1:14]*"/%04d.png -vcodec libx265 -x265-params \"lossless=1\" -preset slow -vf format=yuv420p produced_data/"*simdata.data_dictionary_name[1:14]*"_movie.mp4"
