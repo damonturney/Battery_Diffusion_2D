@@ -307,3 +307,7 @@ end
          ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]    = conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]
          current_density[indices_crossed_eq]                        = current_density[indices_crossed_eq] .* exp.(-abs.(conc_A_along_surface_previous[indices_crossed_eq] .- conc_A_along_surface[indices_crossed_eq])./abs.(conc_A_eq_along_surface .- conc_A_along_surface_previous[indices_crossed_eq]))
       end
+
+
+
+

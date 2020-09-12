@@ -168,7 +168,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = conc_A_along_surface_trial[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] + conc_increment_dy[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] + conc_increment_dx[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps] 
       conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = conc_A_along_surface_trial[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                + conc_increment_dy[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]  + conc_increment_dx[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
       ## Next, calculate the reduction of dt_biggest that is necessary to avoid the interfacial concentration overshooting the equilibrium value
-      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 3*(conc_A_along_surface .- conc_A_along_surface_trial)./ conc_A_along_surface ) ),dims=1)))  #derived from 3*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) / (conc_A_eq_along_surface .- conc_A_along_surface) * (conc_A_eq_along_surface .- conc_A_along_surface) / conc_A_along_surface.  The 3 is to say we don't want the concentration changing by more than 30% of the distance to its equilibrium
+      dt_reduction_factor = Int( maximum( cat( 1,round.( abs.( 3*(conc_A_along_surface .- conc_A_along_surface_trial)./ conc_A_along_surface ) ),dims=1)))  #derived from 3*(conc_A_along_surface .- conc_A_along_surface_trial)./(conc_A_eq_along_surface .- conc_A_along_surface) / (conc_A_eq_along_surface .- conc_A_along_surface) * ( (conc_A_eq_along_surface .- conc_A_along_surface) / conc_A_along_surface )   The 3 is to say we don't want the concentration changing by more than 30% of the distance to its equilibrium.   The ( (conc_A_eq_along_surface .- conc_A_along_surface) / conc_A_along_surface ) is to avoid the situation where conc_A_eq_along_surface hasn't been changing in time thus (conc_A_eq_along_surface .- conc_A_along_surface) is super small and tiny noise in current_density causes overshoot.
       ## Next, calculate the time-evolution of interfacial concentration with "reduced" timesteps
       dt_reduced = simdata.dt_biggest / dt_reduction_factor
       r_x_reduced = ss.Diffusivity * dt_reduced / ss.dx / ss.dx
@@ -355,7 +355,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    ### Give the caller the resulting data
    return(ss,simdata)
 
-end  ## end of function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime)   # iterations=0:Int64(1E2)  , saved_iteration_spacing=1E0,  current_density=? ,  dt=5e-4
+end  ## end of function pulse_current(...) 
 
 
 
