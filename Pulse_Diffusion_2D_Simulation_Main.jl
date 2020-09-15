@@ -31,11 +31,19 @@ module Diffusion_2D
    ############################################################
    #### Functions to create the initial system state and functions for V_anode and V_cathode
    include("Pulse_Diffusion_2D_create_system_state.jl")
+   ############################################################
 
-   #function load_old_battery_state(path_to_old_output_file)
-   #    println("Loading system state from the results of a previous simulation.")
-   #    ss=get(load(path_to_old_output_file*"hi"), "system_state", 0)
-   #end
+
+   ############################################################
+   #### A Function to load previous states
+   function load_previous_state(file_datenumber,iteration_number=0)
+      ss       = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "system_state",0);
+      simdata = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "simdata",0);
+      if iteration_number != 0
+         ss.conc_A[:,:] = 1.0*simdata.conc_A_saved[iteration_number,:,:]
+      end
+      return(ss,simdata)
+   end
    ############################################################
 
 
@@ -44,9 +52,16 @@ module Diffusion_2D
    include("Pulse_Diffusion_2D_Simulation_Pulse_Voltage.jl")
    ############################################################
 
+   
    ############################################################
    ###### A Function for the Pulse Current Operator 
    include("Pulse_Diffusion_2D_Simulation_Pulse_Current.jl")
+   ############################################################
+
+
+   ############################################################
+   ###### A Function for the HYBRID Pulse Current Operator 
+   include("Pulse_Diffusion_2D_Simulation_Pulse_Current_AND_Voltage.jl")
    ############################################################
 
 

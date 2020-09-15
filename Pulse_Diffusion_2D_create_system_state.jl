@@ -92,12 +92,3 @@ end
 
 
 
-
-function load_previous_state(file_datenumber,iteration_number=0)
-   ss       = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "system_state",0);
-   simdata = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "simdata",0);
-   if iteration_number != 0
-      ss.conc_A[:,:] = 1.0*simdata.conc_A_saved[iteration_number,:,:]
-   end
-   return(ss,simdata)
-end

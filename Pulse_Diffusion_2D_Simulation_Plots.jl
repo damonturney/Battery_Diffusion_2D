@@ -41,7 +41,7 @@ function plot_results_time_slice(ss,simdata,k,concentration_color_map_minimum,cu
    plot_axis_han.annotate("superficial",                                                                          (0.63,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_saved[k]/10 )*L"^2",              (0.77,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("t.s. ave. superficial",                                                                (0.19,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", mean(simdata.superficial_cd_saved[4:end])/10 )*L"^2",    (0.34,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", mean(simdata.superficial_cd_saved[5:end])/10 )*L"^2",    (0.34,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    ref_electrode_axis_han.set_facecolor((0.5, 0.5, 0.5))
    ref_electrode_axis_han.get_yaxis().set_visible(false); ref_electrode_axis_han.get_xaxis().set_visible(false); ref_electrode_axis_han.spines["left"].set_visible(false); ref_electrode_axis_han.spines["right"].set_visible(false); ref_electrode_axis_han.spines["top"].set_visible(false); ref_electrode_axis_han.spines["bottom"].set_visible(false);
    ref_electrode_axis_han.annotate("ref electrode", (0.04, 0.2), xycoords="axes fraction")
