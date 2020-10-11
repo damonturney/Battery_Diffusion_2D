@@ -52,7 +52,7 @@ module Diffusion_2D
    include("Pulse_Diffusion_2D_Simulation_Pulse_Voltage.jl")
    ############################################################
 
-   
+
    ############################################################
    ###### A Function for the Pulse Current Operator 
    include("Pulse_Diffusion_2D_Simulation_Pulse_Current.jl")
@@ -60,8 +60,14 @@ module Diffusion_2D
 
 
    ############################################################
-   ###### A Function for the HYBRID Pulse Current Operator 
+   ###### A Function for the HYBRID Pulse Current Operator (this allows you to do a voltage pulse then an OCV pulse)
    include("Pulse_Diffusion_2D_Simulation_Pulse_Current_AND_Voltage.jl")
+   ############################################################
+
+
+   ############################################################
+   ###### A Function for pulsing current from a capacitor
+   include("Pulse_Diffusion_2D_Simulation_Pulse_from_Capacitor.jl")
    ############################################################
 
 

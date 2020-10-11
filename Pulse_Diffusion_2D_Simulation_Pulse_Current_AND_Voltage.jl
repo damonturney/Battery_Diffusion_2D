@@ -1,5 +1,5 @@
 ####################################################################################################
-###### HYBRID Pulse Current AND Voltage Operator
+###### HYBRID Pulse Current AND Voltage Operator (this allows you to do a voltage pulse then an OCV pulse)
 ####################################################################################################
 
 ###### Create the data type that will hold all information for the pulse current operator (including time series)
@@ -22,7 +22,7 @@ struct pulse_voltage_then_current_simulation_data_structure
 end
 
 
-######## A function to create and initialize a single instance of the data structure 
+######## A function to run the simulation 
 function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, voltage_target, ontime1, superficial_cd_target, ontime2, electrode_voltage_limit)   # units are always mks  e.g. current = A/m2,  Flux = moles/m2/s,  concentration = moles/m3
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
@@ -32,13 +32,13 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
    save_data_time_thresholds = save_data_time_thresholds .+ ss.accumulated_simulation_time[1]
    
    simdata=pulse_voltage_then_current_simulation_data_structure(
-      [start_time]                                                           #start_time
-      ,["running"]                                                           #stop_time
-      ,ss                                                                    #input system state
-      ,start_time * "_dictionary_results.jld2"                               #data_dictionary_name
-      ,simulation_duration                                                   #simulation_duration
-      ,dt_biggest                                                            #dt_biggest
-      ,saved_dt_spacing                                                      #saved_dt_spacing
+      [start_time]                                                                            #start_time
+      ,["running"]                                                                            #stop_time
+      ,ss                                                                                     #input system state
+      ,start_time * "_dictionary_results.jld2"                                                #data_dictionary_name
+      ,simulation_duration                                                                    #simulation_duration
+      ,dt_biggest                                                                             #dt_biggest
+      ,saved_dt_spacing                                                                       #saved_dt_spacing
       ,zeros(length(save_data_time_thresholds.+1))                                            #time_saved 
       ,zeros(length(save_data_time_thresholds.+1))                                            #electrode_voltage_saved             
       ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
@@ -54,7 +54,7 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
    println("data saved to produced_data/"*simdata.data_dictionary_name) 
    println("D dt/dx^2 is ",ss.Diffusivity*simdata.dt_biggest/ss.dx/ss.dx, " and must be less than 0.5")
 
-   #Set some values that we need for the simulation loops 
+   # Set some values that we need for the simulation loops 
    short_y_num = ss.num_y_mps - ss.spike_num_y_mps
    short_x_num = ss.num_x_mps - ss.spike_num_x_mps 
    conc_A_along_surface = zeros(ss.num_x_mps + ss.spike_num_y_mps + 1 )
@@ -90,7 +90,7 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
    main_loop_iteration = 0
    while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
-      ##### Save data from the previous timestep 
+      # Save data from the previous timestep 
       if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
          #@printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
          #println(conc_A_along_surface[ss.spike_num_x_mps + ss.spike_num_y_mps - 1 : ss.spike_num_x_mps + ss.spike_num_y_mps + 2 ])
@@ -104,7 +104,7 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
       main_loop_iteration = main_loop_iteration + 1
       time[1] = time[1] + simdata.dt_biggest
 
-      # Update the current density target
+      # Update the voltage or current density target
       superficial_current_density_target_previous_previous[1] = superficial_current_density_target_previous[1]
       superficial_current_density_target_previous[1]          = superficial_current_density_target[1]
       electrode_voltage_previous_previous[1]                  = electrode_voltage_previous[1]
@@ -112,7 +112,7 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
       if mod(time[1], ontime1 + ontime2) <= ontime1
          ss.electrode_voltage[1] = voltage_target
       else
-         ####### Every few microseconds the "Arbin" circuitry adjusts ss.electrode_voltage[1] so that superficial_current_density equals superficial_current_density_target[1], then afterwards the current will stray while ss.electrode_voltage[1] is held constant until the next time the Arbin enforces the correct current
+         # Every few microseconds the "Arbin" circuitry adjusts ss.electrode_voltage[1] so that superficial_current_density equals superficial_current_density_target[1], then afterwards the current will stray while ss.electrode_voltage[1] is held constant until the next time the Arbin enforces the correct current
          # Predict (guess) the ss.electrode_voltage[1] value that might create the target current density (superficial_current_density_target[1]) based on linear regression of the previous two values of ss.electrode_voltage[1]
          if superficial_current_density_target[1] == superficial_current_density_target_previous_previous[1]
             ss.electrode_voltage[1] = electrode_voltage_previous[1] + (electrode_voltage_previous[1] - electrode_voltage_previous_previous[1])

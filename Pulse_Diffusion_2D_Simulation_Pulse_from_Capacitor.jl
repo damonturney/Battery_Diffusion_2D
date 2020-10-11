@@ -1,9 +1,9 @@
 ####################################################################################################
-###### Pulse Voltage Operator
+###### Pulse Voltage From Capacitor
 ####################################################################################################
 
 ###### Create the data type that will hold all information for the pulse voltage operator (including time series)
-struct pulse_voltage_simulation_data_structure
+struct pulse_voltage_from_capacitor_simulation_data_structure
    start_time                      ::Array{String,1}
    stop_time                       ::Array{String,1}
    input_ss                        ::system_state_structure
@@ -19,11 +19,13 @@ struct pulse_voltage_simulation_data_structure
    main_loop_iteration_saved       ::Array{Float64,1}
    Charge_Passed_saved             ::Array{Float64,2}
    conc_A_saved                    ::Array{Float64,3}
+   capacitor_voltage_saved         ::Array{Float64,1}
+   capacitor_voltage               ::Array{Float64,1}
 end
 
 
-######## A function to run the simulation  
-function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, electrode_voltage1, electrode_voltage1_ontime, electrode_voltage2, electrode_voltage2_ontime)   # units are always mks  e.g. current = A/m2,  Flux = moles/m2/s,  concentration = moles/m3
+######## A function to run the simulation                            
+function pulse_voltage_from_capacitor(ss, simulation_duration, dt_biggest, saved_dt_spacing, external_current_per_m2, capacitor_Farads_per_m2 , capacitor_initial_voltage, capacitor_voltage_ontime, ocv_ontime)   # units are always mks  e.g. current = A/m2,  Flux = moles/m2/s,  concentration = moles/m3
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
    if saved_dt_spacing <= dt_biggest; saved_dt_spacing = dt_biggest; end;
@@ -31,14 +33,14 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    save_data_time_thresholds = cat(save_data_time_thresholds,1E9,dims=1);  #this final 1E9 second threshold will never be triggered.  It exists just so that the "time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]" logic can be executed
    save_data_time_thresholds = save_data_time_thresholds .+ ss.accumulated_simulation_time[1]
    
-   simdata=pulse_voltage_simulation_data_structure(
-      [start_time]                                                           #start_time
-      ,["running"]                                                           #stop_time
-      ,ss                                                                    #input system state
-      ,start_time * "_dictionary_results.jld2"                               #data_dictionary_name
-      ,simulation_duration                                                   #simulation_duration
-      ,dt_biggest                                                            #dt_biggest
-      ,saved_dt_spacing                                                      #saved_dt_spacing
+   simdata=pulse_voltage_from_capacitor_simulation_data_structure(
+      [start_time]                                                                            #start_time
+      ,["running"]                                                                            #stop_time
+      ,ss                                                                                     #input system state
+      ,start_time * "_dictionary_results.jld2"                                                #data_dictionary_name
+      ,simulation_duration                                                                    #simulation_duration
+      ,dt_biggest                                                                             #dt_biggest
+      ,saved_dt_spacing                                                                       #saved_dt_spacing
       ,zeros(length(save_data_time_thresholds.+1))                                            #time_saved 
       ,zeros(length(save_data_time_thresholds.+1))                                            #electrode_voltage_saved             
       ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
@@ -47,6 +49,8 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
       ,zeros(length(save_data_time_thresholds.+1))                                            #main_loop_iteration_saved  
       ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1)      #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
       ,zeros(length(save_data_time_thresholds.+1),ss.num_y_mps,ss.num_x_mps)                  #conc_A_saved
+      ,zeros(length(save_data_time_thresholds.+1))                                            #capacitor_voltage_saved
+      ,[capacitor_initial_voltage]                                                            #capacitor_voltage
    )
 
    println(" ");println(" ");println(" ");println(" ")
@@ -54,7 +58,7 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    println("data saved to produced_data/"*simdata.data_dictionary_name) 
    println("D dt/dx^2 is ",ss.Diffusivity*simdata.dt_biggest/ss.dx/ss.dx, " and must be less than 0.5")
 
-   #Set some values that we need for the simulation loops 
+   # Set some values that we need for the simulation loops 
    short_y_num = ss.num_y_mps - ss.spike_num_y_mps
    short_x_num = ss.num_x_mps - ss.spike_num_x_mps 
    conc_A_along_surface = zeros(ss.num_x_mps + ss.spike_num_y_mps + 1 )
@@ -80,36 +84,55 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    conc_A_along_surface_trial                            = copy(conc_A_along_surface)
    conc_increment_dx                                     = 0.0*ss.conc_A
    conc_increment_dy                                     = 0.0*ss.conc_A
+   superficial_current_density_target                    = [0.0]
    electrode_voltage_previous                            = [-1E6] 
    electrode_voltage_previous_previous                   = [-1E6]
-    
+   simdata.capacitor_voltage_saved[1]                    = capacitor_initial_voltage
+
+   
    ########### This for loop increments time.   It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
    main_loop_iteration = 0
    while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
       # Save data from the previous timestep 
       if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
-         @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e   V_eq_corner:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1], voltage_eq_along_surface[180])
-         record_pulse_voltage_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
+         @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e   V_eq_corner:%+0.7e     sup_cd:%+0.4e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1], voltage_eq_along_surface[180], superficial_current_density[1])
+         record_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface, simdata.capacitor_voltage[1])
          simdata_i = simdata_i + 1
       end
 
-      #Increment the loop and time identifiers for the upcoming timestep
+      # Increment the loop and time identifiers for the upcoming timestep
       main_loop_iteration = main_loop_iteration + 1
       time[1] = time[1] + simdata.dt_biggest
 
-      # Update the voltage target
-      voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])
-      if mod(time[1], electrode_voltage1_ontime+electrode_voltage2_ontime) <= electrode_voltage1_ontime
-         ss.electrode_voltage[1] = electrode_voltage1
+      # Update the voltage or current density target
+      electrode_voltage_previous_previous[1]                  = electrode_voltage_previous[1]
+      electrode_voltage_previous[1]                           = ss.electrode_voltage[1]
+      if mod(time[1], capacitor_voltage_ontime + ocv_ontime) <= capacitor_voltage_ontime
+         ss.electrode_voltage[1] = simdata.capacitor_voltage[1]
+         simdata.capacitor_voltage[1] = simdata.capacitor_voltage[1] + simdata.dt_biggest * ( external_current_per_m2 - superficial_current_density[1] ) / capacitor_Farads_per_m2
       else
-         ss.electrode_voltage[1] = electrode_voltage2
+         simdata.capacitor_voltage[1] = simdata.capacitor_voltage[1] + simdata.dt_biggest * ( external_current_per_m2 -         0.0                    ) / capacitor_Farads_per_m2
+         # Put the battery in open circuit
+         # Every few microseconds the "Arbin" circuitry adjusts ss.electrode_voltage[1] so that superficial_current_density equals superficial_current_density_target[1], then afterwards the current will stray while ss.electrode_voltage[1] is held constant until the next time the Arbin enforces the correct current
+         # Predict (guess) the ss.electrode_voltage[1] value that might create the target current density (superficial_current_density_target[1]) based on linear regression of the previous two values of ss.electrode_voltage[1]
+         ss.electrode_voltage[1] = electrode_voltage_previous[1] + (electrode_voltage_previous[1] - electrode_voltage_previous_previous[1])
+         # Correct (aka adjust) the value of ss.electrode_voltage[1] until it creates exactly the correct current, then afterwards hold ss.electrode_voltage[1] steady whil the current strays away from the target value until the Arbin once again enforced the correct current
+         voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
+         overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface[:]
+         current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:]) #(A/m2)
+         superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+         superficial_current_density_error = superficial_current_density - superficial_current_density_target
+         while (abs(superficial_current_density_error[1]) > 0.1) & (abs(ss.electrode_voltage[1]) < abs(0.3)) # the 0.3 is a voltage limit, to prevent voltage from blowing up.  But since this simulation uses OCV, voltage should never blow up.
+            ss.electrode_voltage[1] = ss.electrode_voltage[1] - superficial_current_density_error[1]*1E-7
+            overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface
+            current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:])  #(A/m2)
+            superficial_current_density[1]       = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+            superficial_current_density_error = superficial_current_density - superficial_current_density_target
+            #@printf("loop:%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", main_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
+         end
       end
       
-      voltage_eq_along_surface[:] = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
-      overvoltage[:] = ss.electrode_voltage[1] .- voltage_eq_along_surface[:]
-      current_density[:] = Current_Density.(ss.reaction_k, ss.Beta, conc_A_along_surface[:], conc_B_along_surface[:], overvoltage[:]) #(A/m2)
-      superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       conc_A_eq_along_surface[1] = conc_A_eq(ss.electrode_voltage[1], ss.total_conc, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50] ) 
       molar_flux[:] = current_density[:]/96500.0
 
@@ -258,7 +281,7 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
    ss.accumulated_simulation_time[1] = time[1]
    ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
-   record_pulse_voltage_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
+   record_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface, simdata.capacitor_voltage[1])
    ### Save the results to hard disk
    simdata.stop_time[1]=Dates.format(Dates.now(),"yyyymmddHHMMSS")
    save("produced_data/"*simdata.data_dictionary_name, Dict("system_state"=>ss,"simdata"=>simdata))
@@ -279,7 +302,7 @@ end  ## end of function pulse_voltage(...)
 
 
 ####### A function to record a time series of the battery state during the CV operation
-function record_pulse_voltage_output(ss, simdata, simdata_i , time, main_loop_iteration, electrode_voltage, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface)
+function record_output(ss, simdata, simdata_i , time, main_loop_iteration, electrode_voltage, current_density, superficial_current_density, Charge_Passed, overvoltage, conc_A_along_surface, capacitor_voltage)
       simdata.time_saved[simdata_i]               = time
       simdata.main_loop_iteration_saved[simdata_i]= main_loop_iteration
       simdata.electrode_voltage_saved[simdata_i]  = electrode_voltage
@@ -288,4 +311,5 @@ function record_pulse_voltage_output(ss, simdata, simdata_i , time, main_loop_it
       simdata.Charge_Passed_saved[simdata_i,:]    = Charge_Passed[:]   # coulombs per m3
       simdata.overvoltage_saved[simdata_i,:]      = overvoltage[:]
       simdata.conc_A_saved[simdata_i,:,:]         = ss.conc_A[:,:]
+      simdata.capacitor_voltage_saved[simdata_i]          = capacitor_voltage
 end

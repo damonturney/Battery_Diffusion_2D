@@ -22,7 +22,7 @@ struct pulse_current_simulation_data_structure
 end
 
 
-######## A function to create and initialize a single instance of the data structure 
+######## A function to run the simulation 
 function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime, electrode_voltage_limit)   # units are always mks  e.g. current = A/m2,  Flux = moles/m2/s,  concentration = moles/m3
    start_time=Dates.format(Dates.now(),"yyyymmddHHMMSS")   #start_time
 
@@ -90,7 +90,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    main_loop_iteration = 0
    while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
-      ##### Save data from the previous timestep 
+      # Save data from the previous timestep 
       if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
          #@printf("loop:%5.0i   conc_A_corner:%+0.7e   conc_A_eq:%+0.7e\n", main_loop_iteration, ss.conc_A[end,30], conc_A_eq_along_surface)
          #println(conc_A_along_surface[ss.spike_num_x_mps + ss.spike_num_y_mps - 1 : ss.spike_num_x_mps + ss.spike_num_y_mps + 2 ])

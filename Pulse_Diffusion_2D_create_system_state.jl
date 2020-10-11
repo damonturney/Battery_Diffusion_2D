@@ -22,21 +22,21 @@ end
 struct system_state_structure
    parent_operation_dictionary   ::Array{String,1}
    accumulated_simulation_time   ::Array{Float64,1}
-   Diffusivity        ::Float64
-   dx                 ::Float64
-   dy                 ::Float64
-   locations_x        ::Array{Float64,2}
-   locations_y        ::Array{Float64,2}
-   num_x_mps          ::Int
-   num_y_mps          ::Int
-   spike_num_x_mps    ::Int  #number of meshpoints
-   spike_num_y_mps    ::Int  #number of meshpoints
-   conc_A             ::Array{Float64,2}
-   total_conc         ::Float64
-   electrode_voltage  ::Array{Float64,1}  #electrode voltage wrt the reference electrode 
-   reaction_k         ::Float64
-   Beta               ::Float64
-end
+   Diffusivity                   ::Float64
+   dx                            ::Float64
+   dy                            ::Float64
+   locations_x                   ::Array{Float64,2}
+   locations_y                   ::Array{Float64,2}
+   num_x_mps                     ::Int
+   num_y_mps                     ::Int
+   spike_num_x_mps               ::Int  #number of meshpoints
+   spike_num_y_mps               ::Int  #number of meshpoints
+   conc_A                        ::Array{Float64,2}
+   total_conc                    ::Float64
+   electrode_voltage             ::Array{Float64,1}  #electrode voltage wrt the reference electrode 
+   reaction_k                    ::Float64
+   Beta                          ::Float64
+end         
 
 
 function create_system_state()
