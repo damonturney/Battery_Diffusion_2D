@@ -30,7 +30,7 @@ function plot_results_time_slice(ss,simdata,k,concentration_color_map_minimum,cu
    plot_axis_han.set_ylabel("microns", labelpad=-1)
    #plot_axis_han.text(0.1,0.85,                 " time         ave. current density      overvoltage")
    #plot_axis_han.text(0.1,0.15,Printf.@sprintf("%3.2fs, %8.0f mAh/cm2, %8i mV", simdata.time_real_saved[k], abs(mean(simdata.current_density_saved[k,:])/10) , abs(simdata.electrode_voltage_saved[k]*1000)),family="monospace")
-   plot_axis_han.annotate("working\nelectrode",                                                                   (0.50,0.93), horizontalalignment="center", xycoords="axes fraction", fontsize=9, weight='bold')
+   plot_axis_han.annotate("working\nelectrode",                                                                   (0.50,0.93), horizontalalignment="center", xycoords="axes fraction", fontsize=9, weight="bold")
    plot_axis_han.annotate("voltage"                                                                           ,   (0.50,0.82), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%i mV" ,      simdata.electrode_voltage_saved[k]*1000),                (0.56,0.79), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("space ave.",                                                                           (0.17,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
