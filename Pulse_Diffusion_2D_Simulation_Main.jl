@@ -19,7 +19,7 @@ module Diffusion_2D
    if Sys.isapple()
       cd("/Users/damon/Desktop/BACKED_UP/WorkFiles/ReportsPublicationsPatents/20200308_Patent_GravityFlat_PulseCharged_Zinc_Electrodes/Science_Journal_Publication/20200820_Pulse_Diffusion_2D_Simulation/")
    else
-      cd("/home/damon/Simulations/Battery_Diffusion_2D/")
+      cd("/home/damon/Simulations/20200715_Binary_Salt_Electroneutral/")
    end
    
    # Note: All the expert software engineers told me to not define anything in the 
