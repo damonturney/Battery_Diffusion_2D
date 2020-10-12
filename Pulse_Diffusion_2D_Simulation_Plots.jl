@@ -45,7 +45,7 @@ function plot_results_time_slice(ss,simdata,k,concentration_color_map_minimum,cu
    plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/10 )*L"^2",       (0.34,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    ref_electrode_axis_han.set_facecolor((0.5, 0.5, 0.5))
    ref_electrode_axis_han.get_yaxis().set_visible(false); ref_electrode_axis_han.get_xaxis().set_visible(false); ref_electrode_axis_han.spines["left"].set_visible(false); ref_electrode_axis_han.spines["right"].set_visible(false); ref_electrode_axis_han.spines["top"].set_visible(false); ref_electrode_axis_han.spines["bottom"].set_visible(false);
-   ref_electrode_axis_han.annotate("ref electrode", (0.04, 0.2), xycoords="axes fraction")
+   ref_electrode_axis_han.annotate("ref electrode", (0.04, 0.2), xycoords="axes fraction", weight="bold")
    surface_xs = [collect(1:ss.spike_num_x_mps)*ss.dx; repeat([ss.spike_num_x_mps*ss.dx],inner=ss.spike_num_y_mps) ; collect(ss.spike_num_x_mps:ss.num_x_mps)*ss.dx ; ]*1E6
    surface_ys = ys[[repeat([ss.num_y_mps - ss.spike_num_y_mps],inner=ss.spike_num_x_mps) ; collect(ss.num_y_mps - ss.spike_num_y_mps:ss.num_y_mps) ; repeat([ss.num_y_mps],inner=ss.num_x_mps-ss.spike_num_x_mps)]]
    surface_xs4 = [surface_xs ; -reverse(surface_xs) .+ 2*surface_xs[end] ; surface_xs .+ 2*surface_xs[end] ; -reverse(surface_xs) .+ 4*surface_xs[end] ] #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side

@@ -65,7 +65,6 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
    conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface[:]
    conc_A_eq_along_surface                                                          = [ conc_A_eq(ss.electrode_voltage[1], ss.total_conc, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50] ) ]
-   conc_A_along_surface_previous                                                    = copy(conc_A_along_surface)
    r_x                                                   = ss.Diffusivity * dt_biggest / ss.dx / ss.dx
    r_y                                                   = ss.Diffusivity * dt_biggest / ss.dy / ss.dy
    voltage_eq_along_surface                              = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
@@ -143,7 +142,6 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       #@printf("r:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
 
       ####### Calculate the change in concentration at the interfacial locations.  "Reduced" means the reduction in dt so that overshooting instability doesn't kill the simulation.
-      conc_A_along_surface_previous[:] = conc_A_along_surface[:]
       conc_A_along_surface_trial[:]    = conc_A_along_surface[:]
       conc_next_timestep[:,:] = ss.conc_A[:,:]
       ## Trial calculation of the next timestep's interfacial concentrations

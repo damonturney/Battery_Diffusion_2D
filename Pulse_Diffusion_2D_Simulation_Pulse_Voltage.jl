@@ -65,7 +65,6 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
    conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface[:]
    conc_A_eq_along_surface                                                          = [ conc_A_eq(ss.electrode_voltage[1], ss.total_conc, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50] ) ]
-   conc_A_along_surface_previous                                                    = copy(conc_A_along_surface)
    r_x                                                   = ss.Diffusivity * dt_biggest / ss.dx / ss.dx
    r_y                                                   = ss.Diffusivity * dt_biggest / ss.dy / ss.dy
    voltage_eq_along_surface                              = V_eq.(conc_A_along_surface, conc_B_along_surface, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50])  #The reference electrode is located at [1,50]
@@ -82,8 +81,6 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    conc_A_along_surface_trial                            = copy(conc_A_along_surface)
    conc_increment_dx                                     = 0.0*ss.conc_A
    conc_increment_dy                                     = 0.0*ss.conc_A
-   electrode_voltage_previous                            = [-1E6] 
-   electrode_voltage_previous_previous                   = [-1E6]
     
    ########### This for loop increments time.   It's an EXPLICIT simulation. It uses a forward Euler time marching scheme. 
    main_loop_iteration = 0
@@ -116,7 +113,6 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
       molar_flux[:] = current_density[:]/96500.0
 
       ####### Calculate the change in concentration at the interfacial locations.  "Reduced" means the reduction in dt so that overshooting instability doesn't kill the simulation.
-      conc_A_along_surface_previous[:] = conc_A_along_surface[:]
       conc_A_along_surface_trial[:]    = conc_A_along_surface[:]
       conc_next_timestep[:,:] = ss.conc_A[:,:]
       ## Trial calculation of the next timestep's interfacial concentrations
