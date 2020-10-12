@@ -8,7 +8,7 @@ import PyPlot
 function plot_results_time_slice(ss,simdata,k,concentration_color_map_minimum,current_density_colormap_range)
    xs = collect(range(0.0, 4*ss.num_x_mps*ss.dx, length=4*ss.num_x_mps))*1E6
    ys = reverse(ss.locations_y[:,1])*1E6
-   sup_fac = length(current_density[:])/ss.num_x_mps  # the multiplicative factor to convert between real surface area and superficial surface area
+   sup_fac = length(simdata.current_density_saved[1,:])/ss.num_x_mps  # the multiplicative factor to convert between real surface area and superficial surface area
    conc_data_cat = cat(simdata.conc_A_saved[k,:,:],reverse(simdata.conc_A_saved[k,:,:],dims=2),simdata.conc_A_saved[k,:,:],reverse(simdata.conc_A_saved[k,:,:],dims=2);dims=2)/1000 #to convert from moles/m3 to moles/L
    plot_figure_han = PyPlot.figure(figsize=((4*ss.num_x_mps+100)/100,(ss.num_y_mps+100)/100))
    PyPlot.rc("font", size=9)
