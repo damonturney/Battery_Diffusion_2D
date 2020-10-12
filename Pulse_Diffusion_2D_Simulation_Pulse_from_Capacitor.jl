@@ -16,6 +16,7 @@ struct pulse_voltage_from_capacitor_simulation_data_structure
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
    superficial_cd_saved            ::Array{Float64,1}
+   superficial_cd_time_average     ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
    Charge_Passed_saved             ::Array{Float64,2}
    conc_A_saved                    ::Array{Float64,3}
@@ -41,15 +42,16 @@ function pulse_voltage_from_capacitor(ss, simulation_duration, dt_biggest, saved
       ,simulation_duration                                                                    #simulation_duration
       ,dt_biggest                                                                             #dt_biggest
       ,saved_dt_spacing                                                                       #saved_dt_spacing
-      ,zeros(length(save_data_time_thresholds.+1))                                            #time_saved 
-      ,zeros(length(save_data_time_thresholds.+1))                                            #electrode_voltage_saved             
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-      ,zeros(length(save_data_time_thresholds.+1))                                            #superficial_cd_saved
-      ,zeros(length(save_data_time_thresholds.+1))                                            #main_loop_iteration_saved  
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1)      #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_y_mps,ss.num_x_mps)                  #conc_A_saved
-      ,zeros(length(save_data_time_thresholds.+1))                                            #capacitor_voltage_saved
+      ,zeros(length(save_data_time_thresholds))                                               #time_saved 
+      ,zeros(length(save_data_time_thresholds))                                               #electrode_voltage_saved             
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )        #overvoltage_saved
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )        #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(length(save_data_time_thresholds))                                               #superficial_cd_saved
+      ,[0.0]                                                                                  #superficial_cd_time_average
+      ,zeros(length(save_data_time_thresholds))                                               #main_loop_iteration_saved  
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1)         #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(length(save_data_time_thresholds),ss.num_y_mps,ss.num_x_mps)                     #conc_A_saved
+      ,zeros(length(save_data_time_thresholds))                                               #capacitor_voltage_saved
       ,[capacitor_initial_voltage]                                                            #capacitor_voltage
    )
 
@@ -95,7 +97,7 @@ function pulse_voltage_from_capacitor(ss, simulation_duration, dt_biggest, saved
    while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
       # Save data from the previous timestep 
-      if time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]  #the + 1E-10 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
+      if time[1] + 1E-13 >= save_data_time_thresholds[simdata_i]  #the + 1E-13 is because the computer can't store perfect numbers, e.g. 3E-5 can only be stored as 3.0000000000000004e-5
          @printf(":%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e   V_eq_corner:%+0.7e     sup_cd:%+0.4e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1], voltage_eq_along_surface[180], superficial_current_density[1])
          record_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface, simdata.capacitor_voltage[1])
          simdata_i = simdata_i + 1
@@ -223,6 +225,7 @@ function pulse_voltage_from_capacitor(ss, simulation_duration, dt_biggest, saved
       overvoltage[:]                 = overvoltage_reduced_dt_average[:]
       current_density[:]             = current_density_reduced_dt_average[:]
       superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      simdata.superficial_cd_time_average[1] = simdata.superficial_cd_time_average[1] + superficial_current_density[1]/(simulation_duration/dt_biggest)
       molar_flux[:]                  = current_density[:]/96500.0
       Charge_Passed[:]               = Charge_Passed[:] + current_density*simdata.dt_biggest
 

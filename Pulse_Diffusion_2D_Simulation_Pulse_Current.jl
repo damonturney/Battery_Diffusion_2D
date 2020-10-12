@@ -16,6 +16,7 @@ struct pulse_current_simulation_data_structure
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
    superficial_cd_saved            ::Array{Float64,1}
+   superficial_cd_time_average     ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
    Charge_Passed_saved             ::Array{Float64,2}
    conc_A_saved                    ::Array{Float64,3}
@@ -32,21 +33,22 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    save_data_time_thresholds = save_data_time_thresholds .+ ss.accumulated_simulation_time[1]
    
    simdata=pulse_current_simulation_data_structure(
-      [start_time]                                                           #start_time
-      ,["running"]                                                           #stop_time
-      ,ss                                                                    #input system state
-      ,start_time * "_dictionary_results.jld2"                               #data_dictionary_name
-      ,simulation_duration                                                   #simulation_duration
-      ,dt_biggest                                                            #dt_biggest
-      ,saved_dt_spacing                                                      #saved_dt_spacing
-      ,zeros(length(save_data_time_thresholds.+1))                                            #time_saved 
-      ,zeros(length(save_data_time_thresholds.+1))                                            #electrode_voltage_saved             
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-      ,zeros(length(save_data_time_thresholds.+1))                                            #superficial_cd_saved
-      ,zeros(length(save_data_time_thresholds.+1))                                            #main_loop_iteration_saved  
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_x_mps + ss.spike_num_y_mps + 1)      #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
-      ,zeros(length(save_data_time_thresholds.+1),ss.num_y_mps,ss.num_x_mps)                  #conc_A_saved
+      [start_time]                                                                         #start_time
+      ,["running"]                                                                         #stop_time
+      ,ss                                                                                  #input system state
+      ,start_time * "_dictionary_results.jld2"                                             #data_dictionary_name
+      ,simulation_duration                                                                 #simulation_duration
+      ,dt_biggest                                                                          #dt_biggest
+      ,saved_dt_spacing                                                                    #saved_dt_spacing
+      ,zeros(length(save_data_time_thresholds))                                            #time_saved 
+      ,zeros(length(save_data_time_thresholds))                                            #electrode_voltage_saved             
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(length(save_data_time_thresholds))                                            #superficial_cd_saved
+      ,[0.0]                                                                               #superficial_cd_time_average
+      ,zeros(length(save_data_time_thresholds))                                            #main_loop_iteration_saved  
+      ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1)      #Charge_Passed_saved       WE COUNT THE CORNER MESHPOINT TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(length(save_data_time_thresholds),ss.num_y_mps,ss.num_x_mps)                  #conc_A_saved
    )
 
    println(" ");println(" ");println(" ");println(" ")
@@ -259,6 +261,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       overvoltage[:]                 = overvoltage_reduced_dt_average[:]
       current_density[:]             = current_density_reduced_dt_average[:]
       superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      simdata.superficial_cd_time_average[1] = simdata.superficial_cd_time_average[1] + superficial_current_density[1]/(simulation_duration/dt_biggest)
       molar_flux[:]                  = current_density[:]/96500.0
       Charge_Passed[:]               = Charge_Passed[:] + current_density*simdata.dt_biggest
 
