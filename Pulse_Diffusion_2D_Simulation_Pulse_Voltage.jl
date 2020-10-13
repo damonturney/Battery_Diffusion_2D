@@ -15,6 +15,7 @@ struct pulse_voltage_simulation_data_structure
    electrode_voltage_saved         ::Array{Float64,1}
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
+   current_density_time_average    ::Array{Float64,1}
    superficial_cd_saved            ::Array{Float64,1}
    superficial_cd_time_average     ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
@@ -44,6 +45,7 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
       ,zeros(length(save_data_time_thresholds))                                            #electrode_voltage_saved             
       ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
       ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(ss.num_x_mps + ss.spike_num_y_mps + 1)                                        #current_density_time_average
       ,zeros(length(save_data_time_thresholds))                                            #superficial_cd_saved
       ,[0.0]                                                                               #superficial_cd_time_average
       ,zeros(length(save_data_time_thresholds))                                            #main_loop_iteration_saved  
@@ -194,13 +196,14 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
 
 
       #Revert to the time-averaged values of conc_A_along_surface, overvoltage, current_density, molar_flux, superficial_current_density along the interface during this timestep
-      conc_A_along_surface[:]        = conc_A_along_surface_reduced_dt_average[:]
-      overvoltage[:]                 = overvoltage_reduced_dt_average[:]
-      current_density[:]             = current_density_reduced_dt_average[:]
-      superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      conc_A_along_surface[:]                = conc_A_along_surface_reduced_dt_average[:]
+      overvoltage[:]                         = overvoltage_reduced_dt_average[:]
+      current_density[:]                     = current_density_reduced_dt_average[:]
+      simdata.current_density_time_average[:]= simdata.current_density_time_average[:] + current_density[:] / (simulation_duration/dt_biggest)
+      superficial_current_density[1]         = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       simdata.superficial_cd_time_average[1] = simdata.superficial_cd_time_average[1] + superficial_current_density[1]/(simulation_duration/dt_biggest)
-      molar_flux[:]                  = current_density[:]/96500.0
-      Charge_Passed[:]               = Charge_Passed[:] + current_density*simdata.dt_biggest
+      molar_flux[:]                          = current_density[:]/96500.0
+      Charge_Passed[:]                       = Charge_Passed[:] + current_density*simdata.dt_biggest
 
       ##### Fickian change in concentration due to y-direction gradients.     FOR DISCRETIZATION HELP SEE 2014 DISSERTATION BY ZANGANA !! IF there’s a flux boundary condition at x = 0 then: du/dt = (2*D*u_i+1,j - 2*D*u_i,j )/deltax^2 - 2*D*g/deltax,  u_i,j+1 = u_i,j + 2r*u_i+1,j - 2r*u_i,j - 2r*g*deltax   where g is du/dx on the boundary at x =0 and the 2 comes from the fact that we divide by 0.5deltax, not full deltax (because of boundary at x=0).  If there's a LHS "half boundary" due to a corner on the spike then:  du/dt = ( D*( u_i+1,j - u_i,j )/deltax - (0.5*D*g + 0.5*D*( u_i,j - u_i-1,j )/deltax) )/0.75/deltax,  du/dt = 4/3*D*( u_i+1,j - u_i,j )/deltax^2 - 2/3*D*( u_i,j - u_i-1,j )/deltax^2 - 2/3*D*g/deltax ,   u_i,j+1 = u_i,j + 4/3*r*( u_i+1,j - u_i,j ) - 2/3*r*( u_i,j - u_i-1,j ) - 2/3*r*g*deltax = 2/3*r*u_i-1,j + (1 - 2*r)*u_i,j + 4/3*r*u_i+1,j - 2/3*r*g*deltax       and if the boundary condition is a RHS "half boundary" then this is: u_i,j+1 = 4/3*r*u_i-1,j + (1 - 2*r)*u_i,j + 2/3*r*u_i+1,j + 2/3*r*g*deltax
       conc_next_timestep[:,:] = ss.conc_A[:,:]
@@ -254,7 +257,7 @@ function pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, el
    end   #end of time stepping: while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
    #Print and store the final data      
-   @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+   @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
    ss.accumulated_simulation_time[1] = time[1]
    ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    record_pulse_voltage_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)

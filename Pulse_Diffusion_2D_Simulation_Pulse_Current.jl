@@ -15,6 +15,7 @@ struct pulse_current_simulation_data_structure
    electrode_voltage_saved         ::Array{Float64,1}
    overvoltage_saved               ::Array{Float64,2}
    current_density_saved           ::Array{Float64,2}
+   current_density_time_average    ::Array{Float64,1}
    superficial_cd_saved            ::Array{Float64,1}
    superficial_cd_time_average     ::Array{Float64,1}
    main_loop_iteration_saved       ::Array{Float64,1}
@@ -44,6 +45,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       ,zeros(length(save_data_time_thresholds))                                            #electrode_voltage_saved             
       ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #overvoltage_saved
       ,zeros(length(save_data_time_thresholds),ss.num_x_mps + ss.spike_num_y_mps + 1 )     #current_density_saved    WE COUNT THE CORNER MESHPOINTS TWICE BECAUSE THEY HAVE INTERFACE POINTING IN THE DY DIRECTION AND THE DX DIRECTION
+      ,zeros(ss.num_x_mps + ss.spike_num_y_mps + 1)                                        #current_density_time_average
       ,zeros(length(save_data_time_thresholds))                                            #superficial_cd_saved
       ,[0.0]                                                                               #superficial_cd_time_average
       ,zeros(length(save_data_time_thresholds))                                            #main_loop_iteration_saved  
@@ -255,13 +257,14 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       # @printf("rrrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    molar_flux:%+0.5e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,30], conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps], conc_A_along_surface_reduced_dt_average[ss.spike_num_x_mps+ss.spike_num_y_mps], ss.electrode_voltage[1], molar_flux[ss.spike_num_x_mps+ss.spike_num_y_mps] )
 
       #Revert to the time-averaged values of conc_A_along_surface, overvoltage, current_density, molar_flux, superficial_current_density along the interface during this timestep
-      conc_A_along_surface[:]        = conc_A_along_surface_reduced_dt_average[:]
-      overvoltage[:]                 = overvoltage_reduced_dt_average[:]
-      current_density[:]             = current_density_reduced_dt_average[:]
-      superficial_current_density[1] = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
+      conc_A_along_surface[:]                = conc_A_along_surface_reduced_dt_average[:]
+      overvoltage[:]                         = overvoltage_reduced_dt_average[:]
+      current_density[:]                     = current_density_reduced_dt_average[:]
+      simdata.current_density_time_average[:]= simdata.current_density_time_average[:] + current_density[:] / (simulation_duration/dt_biggest)
+      superficial_current_density[1]         = mean(current_density[:])*length(current_density[:])/ss.num_x_mps
       simdata.superficial_cd_time_average[1] = simdata.superficial_cd_time_average[1] + superficial_current_density[1]/(simulation_duration/dt_biggest)
-      molar_flux[:]                  = current_density[:]/96500.0
-      Charge_Passed[:]               = Charge_Passed[:] + current_density*simdata.dt_biggest
+      molar_flux[:]                          = current_density[:]/96500.0
+      Charge_Passed[:]                       = Charge_Passed[:] + current_density*simdata.dt_biggest
 
       # @printf("rrrr:%-9i   real_time:%+0.3e   dt_red_fac:%-3i    conc_eq:%+0.7e   conc_red:%+0.7e   conc_along:%+0.7e    conc_along_ave:%+0.7e    elctrd_volt:%+0.7e    V_eq_corner:%+0.7e   curr_density:%+0.5e    sup_curr_den:%+0.7e\n", main_loop_iteration , time[1], dt_reduction_factor, conc_A_eq_along_surface[1], conc_A_reduced_dt[end,60], conc_A_along_surface[210], conc_A_along_surface_reduced_dt_average[210], ss.electrode_voltage[1], voltage_eq_along_surface[210], current_density[210] , superficial_current_density[1] )
       # println("curr_den:", current_density[180:193])
@@ -338,7 +341,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    end   #end of time stepping: while time[1] <=  ss.accumulated_simulation_time[1] + simulation_duration
 
    #Print and store the final data      
-   @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , main_loop_iteration*simdata.dt_biggest[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
+   @printf(":%-9i   real_time:%+0.3e   conc_eq:%+0.7e   conc_corner:%+0.7e    elctrd_volt:%+0.7e\n", main_loop_iteration , time[1], conc_A_eq_along_surface[1], ss.conc_A[end,30],  ss.electrode_voltage[1] )
    ss.accumulated_simulation_time[1] = time[1]
    ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
