@@ -113,9 +113,9 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    plot_axis_han2.annotate("time & interface averaged c.d.",                                                                (0.50,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/sup_fac/10)*L"^2",         (0.50,0.92), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han2.annotate("time-averaged superficial c.d.",                                                                (0.50,0.05), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/10 )*L"^2",                (0.50,0.01), horizontalalignment="center",  xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate(Printf.@sprintf("%4.1f", mean(simdata.current_density_saved[:,corner])/10 ),                     (0.11,0.89), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate(Printf.@sprintf("%4.1f", mean(simdata.current_density_saved[:,1])/10 ),                          (0.50,0.57), horizontalalignment="center",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/10 )*L"^2",                (0.50,0.01), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.2f", mean(simdata.current_density_saved[:,corner])/10 ),                     (0.11,0.89), horizontalalignment="right",  xycoords="axes fraction", fontsize=7)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.2f", mean(simdata.current_density_saved[:,1])/10 ),                          (0.50,0.57), horizontalalignment="center", xycoords="axes fraction", fontsize=7)
    surface_xs = [collect(1:ss.spike_num_x_mps)*ss.dx; repeat([ss.spike_num_x_mps*ss.dx],inner=ss.spike_num_y_mps) ; collect(ss.spike_num_x_mps:ss.num_x_mps)*ss.dx ; ]*1E6
    surface_ys = ys[[repeat([ss.num_y_mps - ss.spike_num_y_mps],inner=ss.spike_num_x_mps) ; collect(ss.num_y_mps - ss.spike_num_y_mps:ss.num_y_mps) ; repeat([ss.num_y_mps],inner=ss.num_x_mps-ss.spike_num_x_mps)]]
    surface_xs4 = [surface_xs ; -reverse(surface_xs) .+ 2*surface_xs[end] ; surface_xs .+ 2*surface_xs[end] ; -reverse(surface_xs) .+ 4*surface_xs[end] ] #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side
