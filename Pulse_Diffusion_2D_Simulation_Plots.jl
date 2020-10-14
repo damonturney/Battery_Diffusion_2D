@@ -134,16 +134,19 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
 
    #Plot time series data_dictionary_name
    time_series_axes_han1 = plot_figure_han.add_axes([0.54,0.08,0.425,0.27])
-   time_series_axes_han1.plot(simdata.time_saved,simdata.electrode_voltage_saved*1000, color=[0,0,0])
+   time_series_axes_han1.plot(simdata.time_saved[3:end],simdata.electrode_voltage_saved[3:end]*1000, color=[0,0,0])
    time_series_axes_han1.tick_params(axis = "both", which = "major", labelsize = 7)
    time_series_axes_han1.set_yticks([])
+   time_series_axes_han1.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
    time_series_axes_han1.set_ylabel("Electrode Voltage (mV)", color=[0,0,0])
    time_series_axes_han1.set_xlabel("Time (s)", color=[0,0,0], fontsize = 8)
    time_series_axes_han2 = time_series_axes_han1.twinx()
-   time_series_axes_han2.plot(simdata.time_saved,simdata.superficial_cd_saved, color=[0,0,1])
+   time_series_axes_han2.plot(simdata.time_saved[3:end],simdata.superficial_cd_saved[3:end], color=[0,0,1])
    time_series_axes_han2.tick_params(axis = "both", which = "major", labelsize = 7)
    time_series_axes_han2.set_yticks([])
+   time_series_axes_han2.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
    time_series_axes_han2.set_ylabel("Current Density (mA/cm2)", color=[0,0,1])
+
    ylim_temp = time_series_axes_han2.get_ylim()
    time_series_axes_han2.plot([simdata.time_saved[k],simdata.time_saved[k]],[minimum(simdata.superficial_cd_saved*2.1),maximum(simdata.superficial_cd_saved*2.1)] , color="red", alpha=0.3)
    time_series_axes_han2.set_ylim(ylim_temp)
