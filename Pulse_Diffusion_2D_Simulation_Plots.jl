@@ -67,8 +67,8 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    plot_axis_han.annotate(Printf.@sprintf("%i mV" ,      simdata.electrode_voltage_saved[k]*1000),                (0.56,0.80), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("interfacial c.d.",                                                                     (0.50,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", mean(simdata.current_density_saved[k,:])/10)*L"^2",      (0.63,0.93), horizontalalignment="right", xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate("time"                                                              ,                   (0.88,0.98), horizontalalignment="left"  , xycoords="axes fraction", fontsize=8)
-   plot_axis_han.annotate(Printf.@sprintf("%2.2fs",     simdata.time_saved[k] ),                                  (0.99,0.95), horizontalalignment="right"  , xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate("time"                                                              ,                   (0.88,0.96), horizontalalignment="left"  , xycoords="axes fraction", fontsize=8)
+   plot_axis_han.annotate(Printf.@sprintf("%2.2fs",     simdata.time_saved[k] ),                                  (0.99,0.93), horizontalalignment="right"  , xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate("superficial c.d.",                                                                     (0.50,0.04), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
    plot_axis_han.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_saved[k]/10 )*L"^2",              (0.63,0.01), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
    ref_electrode_axis_han.set_facecolor((0.5, 0.5, 0.5))
@@ -143,7 +143,7 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    time_series_axes_han1.set_xlabel("Time (s)", color=[0,0,0], fontsize = 8)
    time_series_axes_han2 = time_series_axes_han1.twinx()
    time_series_axes_han2.plot(simdata.time_saved[3:end],simdata.superficial_cd_saved[3:end], color=[0,0,1])
-   time_series_axes_han2.tick_params(axis = "y", which = "major", labelsize = 7, direction="in", pad=-10)
+   time_series_axes_han2.tick_params(axis = "y", which = "major", labelsize = 7, direction="in", pad=-10, color=[0,0,1])
    time_series_axes_han2.tick_params(axis = "x", which = "major", labelsize = 7)
    time_series_axes_han2.set_yticks([0.0])
    time_series_axes_han2.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
@@ -151,7 +151,7 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    ylim_temp = time_series_axes_han2.get_ylim();
    time_series_axes_han2.plot([simdata.time_saved[k],simdata.time_saved[k]],[ylim_temp[1],ylim_temp[2]] , color="red", alpha=0.3)
    time_series_axes_han2.set_ylim(ylim_temp)
-   
+
 end
 
 
