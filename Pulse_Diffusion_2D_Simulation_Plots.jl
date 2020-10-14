@@ -107,12 +107,15 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    contour_han2 = plot_axis_han2.contour(xs,ys,conc_data_cat,levels,linewidths=0.5, colors="k", vmin=concentration_color_map_minimum, vmax=1, alpha=0.25, zorder=2)
    ylim=plot_axis_han2.get_ylim()
    xlim=plot_axis_han2.get_xlim()
+   corner = ss.spike_num_x_mps + ss.spike_num_y_mps
    #plot_axis_han2.text(0.1,0.85,                 " time         ave. current density      overvoltage")
    #plot_axis_han2.text(0.1,0.15,Printf.@sprintf("%3.2fs, %8.0f mAh/cm2, %8i mV", simdata.time_saved[k], abs(mean(simdata.current_density_saved[k,:])/10) , abs(simdata.electrode_voltage_saved[k]*1000)),family="monospace")
-   plot_axis_han2.annotate("time & interface averaged c.d.",                                                                (0.5,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/sup_fac/10)*L"^2",         (0.5,0.92), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate("time-averaged superficial c.d.",                                                                (0.5,0.05), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
-   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/10 )*L"^2",                (0.5,0.01), horizontalalignment="center",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate("time & interface averaged c.d.",                                                                (0.50,0.96), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/sup_fac/10)*L"^2",         (0.50,0.92), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate("time-averaged superficial c.d.",                                                                (0.50,0.05), horizontalalignment="center", xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.2f mA/cm", simdata.superficial_cd_time_average[1]/10 )*L"^2",                (0.50,0.01), horizontalalignment="center",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.1f", mean(simdata.current_density_saved[:,corner])/10 ),                     (0.11,0.89), horizontalalignment="right",  xycoords="axes fraction", fontsize=8)
+   plot_axis_han2.annotate(Printf.@sprintf("%4.1f", mean(simdata.current_density_saved[:,1])/10 ),                          (0.50,0.57), horizontalalignment="center",  xycoords="axes fraction", fontsize=8)
    surface_xs = [collect(1:ss.spike_num_x_mps)*ss.dx; repeat([ss.spike_num_x_mps*ss.dx],inner=ss.spike_num_y_mps) ; collect(ss.spike_num_x_mps:ss.num_x_mps)*ss.dx ; ]*1E6
    surface_ys = ys[[repeat([ss.num_y_mps - ss.spike_num_y_mps],inner=ss.spike_num_x_mps) ; collect(ss.num_y_mps - ss.spike_num_y_mps:ss.num_y_mps) ; repeat([ss.num_y_mps],inner=ss.num_x_mps-ss.spike_num_x_mps)]]
    surface_xs4 = [surface_xs ; -reverse(surface_xs) .+ 2*surface_xs[end] ; surface_xs .+ 2*surface_xs[end] ; -reverse(surface_xs) .+ 4*surface_xs[end] ] #Since the lhs and rhs are periodic boundaries... I simply repeat the results 4 times side by side
