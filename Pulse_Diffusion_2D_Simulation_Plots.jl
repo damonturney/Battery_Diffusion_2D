@@ -135,18 +135,33 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    #Plot time series data_dictionary_name
    time_series_axes_han1 = plot_figure_han.add_axes([0.54,0.08,0.425,0.27])
    time_series_axes_han1.plot(simdata.time_saved[3:end],simdata.electrode_voltage_saved[3:end]*1000, color=[0,0,0])
-   time_series_axes_han1.tick_params(axis = "y", which = "major", labelsize = 7, direction="in",pad=-10)
-   time_series_axes_han1.tick_params(axis = "x", which = "major", labelsize = 7)
-   time_series_axes_han1.set_yticks([0.0])
    time_series_axes_han1.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
+   if abs(maximum(simdata.electrode_voltage_saved[3:end]*1000)) > abs(minimum(simdata.electrode_voltage_saved[3:end]*1000))
+      big_ytick = maximum(simdata.electrode_voltage_saved[3:end]*1000)
+   else
+      big_ytick = minimum(simdata.electrode_voltage_saved[3:end]*1000)
+   end
+   time_series_axes_han1.set_yticks([0.0, big_ytick*0.85])
+   time_series_axes_han1.set_yticklabels([0.0, big_ytick*0.85],horizontalalignment = "left")
+   time_series_axes_han1.yaxis.set_major_formatter(PyPlot.matplotlib.ticker.FormatStrFormatter("%4.1f"))
+   time_series_axes_han1.tick_params(axis = "y", which = "major", labelsize = 7, direction="in", pad=-5)
+   #time_series_axes_han1.set_yticklabels([0.0, big_ytick*0.85],horizontalalignment = "left")
+   time_series_axes_han1.tick_params(axis = "x", which = "major", labelsize = 7)
    time_series_axes_han1.set_ylabel("Electrode Voltage (mV)", color=[0,0,0])
    time_series_axes_han1.set_xlabel("Time (s)", color=[0,0,0], fontsize = 8)
    time_series_axes_han2 = time_series_axes_han1.twinx()
    time_series_axes_han2.plot(simdata.time_saved[3:end],simdata.superficial_cd_saved[3:end], color=[0,0,1])
-   time_series_axes_han2.tick_params(axis = "y", which = "major", labelsize = 7, direction="in", pad=-10, color=[0,0,1])
-   time_series_axes_han2.tick_params(axis = "x", which = "major", labelsize = 7)
-   time_series_axes_han2.set_yticks([0.0])
    time_series_axes_han2.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
+   if abs(maximum(simdata.electrode_voltage_saved[3:end]*1000)) > abs(minimum(simdata.superficial_cd_saved[3:end]))
+      big_ytick = maximum(simdata.superficial_cd_saved[3:end])
+   else
+      big_ytick = minimum(simdata.superficial_cd_saved[3:end])
+   end
+   time_series_axes_han2.set_yticks([0.0, big_ytick*0.85])
+   time_series_axes_han2.set_yticklabels([0.0, big_ytick*0.85],horizontalalignment = "right", color=[0,0,1])
+   time_series_axes_han2.yaxis.set_major_formatter(PyPlot.matplotlib.ticker.FormatStrFormatter("%4.1f"))
+   time_series_axes_han2.tick_params(axis = "y", which = "major", labelsize = 7, direction="in", pad=-5, color=[0,0,1])
+   time_series_axes_han2.tick_params(axis = "x", which = "major", labelsize = 7)
    time_series_axes_han2.set_ylabel("Current Density (mA/cm2)", color=[0,0,1])
    ylim_temp = time_series_axes_han2.get_ylim();
    time_series_axes_han2.plot([simdata.time_saved[k],simdata.time_saved[k]],[ylim_temp[1],ylim_temp[2]] , color="red", alpha=0.3)
