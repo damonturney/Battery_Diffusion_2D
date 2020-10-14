@@ -1,20 +1,24 @@
-########## Description of the Physics Strategy and Discretization Strategy
+########## Description of the Physics Strategy and Discretization Strategy ########################################################################################################################
+
+##############################################################################################################################################################################################
 
 
 
 
-
-
-######### Verions:
+######### Verions ##############################################################################################################################################################################################
 v1.1
 v1.2
 v1.3
 v1.4
+v1.5
+v1.6
+v1.7
+v1.8
+#######################################################################################################################################################################################################################
 
 
 
-
-######### Work Flow
+######### Work Flow ##############################################################################################################################################################################################
 include("Pulse_Diffusion_2D_Simulation_Main.jl");
 ss = Diffusion_2D.create_system_state(); 
 ss,simdata = Diffusion_2D.pulse_current(ss , 0.1, 1E-5, 0.01, -200, 10, -200 , 10);  #units are always mks.  pulse_voltage(ss, simulation_duration, dt_biggest, saved_dt_spacing, superficial_current_density_target1, current_density1_ontime, superficial_current_density_target2, current_density2_ontime) 
@@ -27,10 +31,14 @@ Diffusion_2D.make_movie(ss,simdata,505)
 #cv_data = get(load(data_file_name), "cyclicV_data",0);
 #Diffusion_2D.plot_results_time_series(ss,cv_data)
 
+########################################################################################################################################################################################################
 
 
 
-######### To Do:
+
+
+
+######### To Do ##################################################################################################################################################################################################################
 1) I encountered "overshoot" problems for mesh points along the electrode interface when the concentration gets low (near ~5.0 mole / m^3 or lower) because the electrode voltage starts to change by large amounts in order to maintain 
    the same current density, thus the overvoltages get large and the current remains high, but since concentration is low (near ~5 mole/m3 or lower) it can shoot below zero during a dt step or it can pass the equilibrium concentration 
    (which in reality wouldn't happen because the rate of change of concentration should asymptote to the equilibrium concentration), and also the equilibrium voltage is VERY sensitive to concentration for low concentration thus small 
@@ -42,6 +50,7 @@ Diffusion_2D.make_movie(ss,simdata,505)
 1 conclusion)  I opted to do option 1a but I can alway redo it to be 1b.
 
 2) Read through Julia's performance optimization tips and apply them
+##############################################################################################################################################################################################
 
 
 
@@ -49,8 +58,7 @@ Diffusion_2D.make_movie(ss,simdata,505)
 
 
 
-
-######### ALPHABETICAL LIST OF VIM COMMANDS
+######### ALPHABETICAL LIST OF VIM COMMANDS ######################################################################################################################################################
 Movement
 h j k l
 Basic movement keys. A step up from the cursor keys simply because they are already under your fingers. Most useful when prefixed with a number (e.g. if you need to move down by about 10 lines, hit “10j” instead of just holding j until you get there).
@@ -114,14 +122,14 @@ If the cursor is just inside the open paren for map(), I could use “cf)”. Th
 Say the cursor is on the word “format”. I would do “ci(”. Vim will search backward to find the first open paren, then search forward to find its match, and correct the text between (but not including) those characters.
 Maybe my cursor was already closest to the word “cookies.” To break out of the inner parentheses, I would need to add a count and do “2ci(”. This is almost identical to the last example, except that the 2 is needed due to the nested parentheses.
 
+######################################################################################################################################################################################################################################
 
 
 
 
 
 
-
-########## ALPHABETICAL GIT COMMANDS (MASTER LIST IS IN BACKEDUP/Software/DamonWrittenSoftware/)
+########## ALPHABETICAL GIT COMMANDS (MASTER LIST IS IN BACKEDUP/Software/DamonWrittenSoftware/) ##################################################################################################################################
 cat .git/HEAD                        see what the HEAD is current pointing to
 git add .                            add all changed files to the staging area
 git branch                           shows the names of all local branches
@@ -159,7 +167,6 @@ SEE COMPLETE HISTORY OF THE GIT REPOSITORY
 git log --all --graph --decorate --oneline --date=short --pretty
 
 
-
 WITHIN THE .gitignore FILE
 *                                    * means "everyhting", thus this line means "ignore everything"
 !.gitattributes                      ! means "don't",  thus this line means "don't ignore .gitattributes"
@@ -168,15 +175,12 @@ WITHIN THE .gitignore FILE
 !versions.txt                        don't ignore versions.txt
 !*/                                  don't ignore all subdirectories, but inside each subdirectory all other gitignore rules are applied
 
- 
-
 
 SETUP GIT ON LOCAL COMPUTER AND ENABLE TRANSFERS TO GITHUB WITHOUT PASSWORDS
 git config --global user.name "Damon Turney"
 git config --global user.email "damonturney@gmail.com"
 ssh-keygen -f ~/.ssh/id_rsa -t rsa -C "damonturney@gmail.com"   And enter a password when it prompts
 copy the rsa key from ~/.ssh/id_rsa.pub with pbcopy < ~/.ssh/id_rsa.pub and paste it into the SSH key entry in GitHub webaccount "Settings --> SSH and GPG keys"
-
 
 
 INITIATE A GIT REPOSITORY ON LOCAL COMPUTER
@@ -188,12 +192,10 @@ git tag v0.0
 git remote add origin https://github.com/damonturney/20190925_AlCl4_EMImCl_Battery_Simulation.git
 
 
-
 COMMIT CHANGES THEN PUSH CHANGES TO REMOTE
 git add .                             add all changed files to the staging area
 git commit -m 'better phi function'   commit all staged files to the current branch
 git push origin HEAD --tags           push all commits from current branch to origin, including lightweight tags
-
 
 
 VERSIONING
@@ -214,7 +216,7 @@ git switch name                        switches the folder contents and HEAD to 
 
 
 
-######## Old code
+######## Old code ##############################################################################################################################################################################################
 
 
       #@printf("loop.%5.0i   superficial_current_density:%+0.7e   electrode_voltage:%+0.7e   target_cd:%+0.7e   superficial_cd_error:%+0.7e\n", simulation_loop_iteration, superficial_current_density , ss.electrode_voltage[1] , superficial_current_density_target , superficial_current_density_error)
