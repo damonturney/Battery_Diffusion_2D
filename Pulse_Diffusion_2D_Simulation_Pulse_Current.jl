@@ -65,7 +65,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
    conc_A_along_surface[1:ss.spike_num_x_mps]                                       = ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]
    conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps] = ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]
    conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]                = ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]
-   conc_B_along_surface                                                             = ss.total_conc .- conc_A_along_surface[:]
+   conc_B_along_surface                                                             = 1.0*conc_A_along_surface[:]
    conc_A_eq_along_surface                                                          = [ conc_A_eq(ss.electrode_voltage[1], ss.total_conc, ss.conc_A[1,50], ss.total_conc - ss.conc_A[1,50] ) ]
    r_x                                                   = ss.Diffusivity * dt_biggest / ss.dx / ss.dx
    r_y                                                   = ss.Diffusivity * dt_biggest / ss.dy / ss.dy
@@ -322,7 +322,7 @@ function pulse_current(ss, simulation_duration, dt_biggest, saved_dt_spacing, su
       ss.conc_A[short_y_num+1,1:ss.spike_num_x_mps]              = conc_A_along_surface[1:ss.spike_num_x_mps]
       ss.conc_A[short_y_num+1:ss.num_y_mps,ss.spike_num_x_mps]   = conc_A_along_surface[ss.spike_num_x_mps+1:ss.spike_num_x_mps+ss.spike_num_y_mps]
       ss.conc_A[ss.num_y_mps,ss.spike_num_x_mps:ss.num_x_mps]    = conc_A_along_surface[ss.spike_num_x_mps+ss.spike_num_y_mps+1:end]
-      conc_B_along_surface[:]                                    = ss.total_conc .- conc_A_along_surface[:]
+      conc_B_along_surface[:]                                    = conc_A_along_surface[:]
 
       #Build the time-averaged values during these "reduced" time steps
       # println(conc_increment_dy[end-3,29:38])
