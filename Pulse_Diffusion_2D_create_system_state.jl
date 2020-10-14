@@ -53,7 +53,7 @@ function create_system_state()
    locations_y = reverse(collect(range(0.0, num_y_mps*dy, length=num_y_mps))*transpose(ones(num_x_mps)),dims=1)
 
    ## Describing the electrolyte domain
-   Diffusivity=1.E-10 #in units of m^2/s
+   Diffusivity=2.E-11 #in units of m^2/s
 
    ## Describing the spike 
    spike_num_x_mps = 30
