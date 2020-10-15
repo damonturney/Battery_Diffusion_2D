@@ -69,7 +69,7 @@ function create_system_state()
 
    #ss stands for system state
    system_state=system_state_structure(
-      ["virginnewstate_dictionary_results.jld2"],   #parent_operation
+      ["virginnewstate_dictionary_results.jld2"],   #parent data dictionary
       [0.0],               #accumulated_simulation_time
       Diffusivity,         #Diffusivity       
       dx,                  #dx

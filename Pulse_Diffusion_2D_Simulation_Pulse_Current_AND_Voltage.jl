@@ -4,6 +4,7 @@
 
 ###### Create the data type that will hold all information for the pulse current operator (including time series)
 struct pulse_voltage_then_current_simulation_data_structure
+   operation                       ::Array{String,1}
    start_time                      ::Array{String,1}
    stop_time                       ::Array{String,1}
    input_ss                        ::system_state_structure
@@ -33,8 +34,30 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
    save_data_time_thresholds = cat(save_data_time_thresholds,1E9,dims=1);  #this final 1E9 second threshold will never be triggered.  It exists just so that the "time[1] + 1E-10 >= save_data_time_thresholds[simdata_i]" logic can be executed
    save_data_time_thresholds = save_data_time_thresholds .+ ss.accumulated_simulation_time[1]
    
+   #Save the input ss to an archived ss structure
+   old_ss = system_state_structure(
+      copy(ss.parent_operation_dictionary),   #parent_operation
+      copy(ss.accumulated_simulation_time),   #accumulated_simulation_time
+      copy(ss.Diffusivity),                   #Diffusivity       
+      copy(ss.dx),                            #dx
+      copy(ss.dy),                            #dy
+      copy(ss.locations_x),                   #locations_x     
+      copy(ss.locations_y),                   #locations_y 
+      copy(ss.num_x_mps),                     #num_x_mps 
+      copy(ss.num_y_mps),                     #num_y_mps
+      copy(ss.spike_num_x_mps),               #spike_num_x_mps
+      copy(ss.spike_num_y_mps),               #spike_num_y_mps
+      copy(ss.conc_A),                        #concentration of A 
+      copy(ss.total_conc),                    #concentration of A 
+      copy(ss.electrode_voltage),             #electrode_voltage  (wrt the reference electrode)
+      copy(ss.reaction_k),                    #reaction_k
+      copy(ss.Beta)                           #Beta
+   )
+
+   # Create the simulation data dictionary
    simdata=pulse_voltage_then_current_simulation_data_structure(
-      [start_time]                                                                            #start_time
+      [@sprintf("pulse_voltage_and_current(ss, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f", simulation_duration, dt_biggest, saved_dt_spacing, voltage_target, ontime1, superficial_cd_target, ontime2, electrode_voltage_limit)]   #operation performed
+      ,[start_time]                                                                            #start_time
       ,["running"]                                                                            #stop_time
       ,ss                                                                                     #input system state
       ,start_time * "_dictionary_results.jld2"                                                #data_dictionary_name
