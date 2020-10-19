@@ -29,21 +29,8 @@ module Diffusion_2D
    #include("Battery_Simulation_1D_generally_useful_functions.jl") 
 
    ############################################################
-   #### Functions to create the initial system state and functions for V_anode and V_cathode
+   #### Functions to create the initial system state, load a previous system state, and functions for V_anode and V_cathode
    include("Pulse_Diffusion_2D_create_system_state.jl")
-   ############################################################
-
-
-   ############################################################
-   #### A Function to load previous states
-   function load_previous_state(file_datenumber,iteration_number=0)
-      ss       = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "system_state",0);
-      simdata = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "simdata",0);
-      if iteration_number != 0
-         ss.conc_A[:,:] = 1.0*simdata.conc_A_saved[iteration_number,:,:]
-      end
-      return(ss,simdata)
-   end
    ############################################################
 
 

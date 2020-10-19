@@ -59,7 +59,7 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
       [@sprintf("pulse_voltage_and_current(ss, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f", simulation_duration, dt_biggest, saved_dt_spacing, voltage_target, ontime1, superficial_cd_target, ontime2, electrode_voltage_limit)]   #operation performed
       ,[start_time]                                                                            #start_time
       ,["running"]                                                                            #stop_time
-      ,ss                                                                                     #input system state
+      ,old_ss                                                                                     #input system state
       ,start_time * "_dictionary_results.jld2"                                                #data_dictionary_name
       ,simulation_duration                                                                    #simulation_duration
       ,dt_biggest                                                                             #dt_biggest
@@ -369,21 +369,21 @@ function pulse_voltage_then_current(ss, simulation_duration, dt_biggest, saved_d
    ss.accumulated_simulation_time[1] = time[1]
    ss.parent_operation_dictionary[1] = simdata.data_dictionary_name
    record_pulse_current_output(ss, simdata, simdata_i, time[1], main_loop_iteration, ss.electrode_voltage[1],  current_density, superficial_current_density[1], Charge_Passed, overvoltage, conc_A_along_surface)
-   ### Save the results to hard disk
+   # Save the results to hard disk
    simdata.stop_time[1]=Dates.format(Dates.now(),"yyyymmddHHMMSS")
    save("produced_data/"*simdata.data_dictionary_name, Dict("system_state"=>ss,"simdata"=>simdata))
 
-   ### Print some basic output
+   # Print some basic output
    print("simulated duration is ",simulation_duration, " seconds\n")
    println("using FileIO")
    println("simdata = get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"simdata\",0);")
    println("ss =       get(load(\"produced_data/"*simdata.data_dictionary_name*"\"), \"system_state\",0);")
    println("ss,simdata = Diffusion_2D.load_previous_state(\""*simdata.data_dictionary_name[1:14]*"\");")
 
-   ### Give the caller the resulting data
+   # Give the caller the resulting data
    return(ss,simdata)
 
-end  ## end of function pulse_current(...) 
+end  # end of function pulse_current(...) 
 
 
 

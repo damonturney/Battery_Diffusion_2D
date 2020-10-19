@@ -1,26 +1,40 @@
-"""
-Create the data structure for the system state
 
 
-"""
-
-
+################################################################################################################################################################
 #### Equilibrium voltage of the electrode with respect to a reference electrode in the bulk (assuming zero electrostatic fields). The reference electrode is in the "bulk'
 function V_eq(conc_A, conc_B, conc_A_re, conc_B_re )  
    return( 8.3*300/96500*log( conc_A/conc_A_re * conc_B_re/conc_B ) )  #The reaction is:      A + e- <-> B        mu_A - F*V_eq = mu_B          R*T*ln(conc_A) - F*V_eq = R*T*ln(conc_B) + C         V_eq = RT/F ln(conc_A/conc_B) +C        The reference electrode is in the "bulk'
 end
+################################################################################################################################################################
 
+
+
+
+################################################################################################################################################################
 #### Equilibrium concentration at the interface of the electrode.  It returns the conc_A that is in equilibrium with the electrode voltage.   R*T*ln(conc_A/conc_A_ref) - F*V_eq_wrt_ref = R*T*ln(conc_B/conc_B_ref)   thus   conc_A*conc_B_ref/conc_A_ref/conc_B = exp(F/R/T*V_eq_wrt_ref)
 function conc_A_eq(electrode_voltage, conc_B, conc_A_re, conc_B_re )
    return( exp(96500/8.3/300*electrode_voltage) / (conc_B_re/conc_A_re/conc_B) )
 end 
+################################################################################################################################################################
 
+
+
+
+################################################################################################################################################################
+#### Calculate the current density on the only electrode in the simulation
 function Current_Density(reaction_k, Beta, conc_A_along_surface, conc_B_along_surface, overvoltage)
    return(-96500*reaction_k*(conc_A_along_surface)* ( exp(-(1.0 - Beta)*96500/8.3/300*overvoltage ) -  exp.(Beta*300/8.3/300*overvoltage) ) )  #(A/m2)
 end
+################################################################################################################################################################
 
+
+
+
+
+################################################################################################################################################################
+#### Define the data structure for the system state
 struct system_state_structure
-   parent_operation_dictionary   ::Array{String,1}
+   parent_operation_dictionary   ::Array{String,1} 
    accumulated_simulation_time   ::Array{Float64,1}
    Diffusivity                   ::Float64
    dx                            ::Float64
@@ -37,8 +51,15 @@ struct system_state_structure
    reaction_k                    ::Float64
    Beta                          ::Float64
 end         
+################################################################################################################################################################
 
 
+
+
+
+
+################################################################################################################################################################
+#### Create an instance of the system state
 function create_system_state()
    ############## Define system CONSTANTS that don't mutate or change at all during the ############################
    ############## calculations                                                          ############################
@@ -89,6 +110,22 @@ function create_system_state()
 
    return(system_state)
 end
+################################################################################################################################################################
 
+
+
+
+
+############################################################
+#### A Function to load previous states
+function load_previous_state(file_datenumber,iteration_number=0)
+   ss       = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "system_state",0);
+   simdata = get(FileIO.load("produced_data/"*file_datenumber*"_dictionary_results.jld2"), "simdata",0);
+   if iteration_number != 0
+      ss.conc_A[:,:] = 1.0*simdata.conc_A_saved[iteration_number,:,:]
+   end
+   return(ss,simdata)
+end
+############################################################
 
 

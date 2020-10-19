@@ -3,7 +3,7 @@
 ####################################################################################################
 
 ###### Create the data type that will hold all information for the pulse voltage operator (including time series)
-struct pulse_voltage_from_capacitor_simulation_data_structure
+struct pulse_voltage_from_capacitor_simulation_data_structure 
    operation                       ::Array{String,1}
    start_time                      ::Array{String,1}
    stop_time                       ::Array{String,1}
@@ -59,9 +59,9 @@ function pulse_voltage_from_capacitor(ss, simulation_duration, dt_biggest, saved
    # Create the simulation data dictionary   
    simdata=pulse_voltage_from_capacitor_simulation_data_structure(
       [@sprintf("pulse_voltage_from_capacitor(ss, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f, %2.2f", simulation_duration, dt_biggest, saved_dt_spacing, external_current_per_m2, capacitor_Farads_per_m2 , capacitor_initial_voltage, capacitor_voltage_ontime, ocv_ontime)]   #operation performed
-      ,[start_time]                                                                            #start_time
+      ,[start_time]                                                                           #start_time
       ,["running"]                                                                            #stop_time
-      ,ss                                                                                     #input system state
+      ,old_ss                                                                                 #input system state
       ,start_time * "_dictionary_results.jld2"                                                #data_dictionary_name
       ,simulation_duration                                                                    #simulation_duration
       ,dt_biggest                                                                             #dt_biggest
