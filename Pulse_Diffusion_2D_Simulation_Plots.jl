@@ -153,10 +153,10 @@ function plot_results_3_plots(ss,simdata,k,concentration_color_map_minimum,curre
    time_series_axes_han2 = time_series_axes_han1.twinx()
    time_series_axes_han2.plot(simdata.time_saved[3:end],simdata.superficial_cd_saved[3:end]/10, color=[0,0,1])
    time_series_axes_han2.plot(simdata.time_saved[5], 0.0, color=[1,1,1], alpha=0.0)  #This ensures that the y-range of the y-axis includes 0.0
-   if abs(maximum(simdata.electrode_voltage_saved[3:end]*1000)) > abs(minimum(simdata.superficial_cd_saved[3:end]))
-      big_ytick = maximum(simdata.superficial_cd_saved[3:end])
+   if abs(maximum(simdata.superficial_cd_saved[3:end]/10)) > abs(minimum(simdata.superficial_cd_saved[3:end]/10))
+      big_ytick = maximum(simdata.superficial_cd_saved[3:end]/10)
    else
-      big_ytick = minimum(simdata.superficial_cd_saved[3:end])
+      big_ytick = minimum(simdata.superficial_cd_saved[3:end]/10)
    end
    time_series_axes_han2.set_yticks([0.0, big_ytick*0.85])
    time_series_axes_han2.set_yticklabels([0.0, big_ytick*0.85],horizontalalignment = "right", color=[0,0,1])
